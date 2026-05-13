@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>VCET-IT | HoD Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ══ Analysis Grid ══ */
+.analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.anl-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; }
+.anl-card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--txt3); letter-spacing: .6px; }
+.anl-card-val { font-size: 20px; font-weight: 800; color: var(--txt); margin: 6px 0; }
+.anl-card-sub { font-size: 11px; color: var(--txt2); }
+.anl-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.anl-bar-fill { height: 100%; border-radius: 2px; transition: width .3s ease; }
+
+/* ══ Report Styles ══ */
+.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.report-card { background: var(--surface2); border-left: 4px solid var(--pri); padding: 12px; border-radius: var(--r-xs); }
+.report-card.green { border-left-color: var(--suc); }
+.report-card.orange { border-left-color: var(--acc); }
+.report-card.red { border-left-color: var(--dan); }
+.report-card.purple { border-left-color: var(--hod); }
+.report-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--txt3); }
+.report-value { font-size: 18px; font-weight: 800; color: var(--txt); margin-top: 4px; }
+
+/* ══ Compact Table ══ */
+.compact-tbl th { padding: 7px 10px; font-size: 9px; }
+.compact-tbl td { padding: 8px 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="toastZone"></div>
+<div class="global-loader" id="gLoader" style="display:none">
+  <div class="spinner"></div>
+  <div class="loader-txt" id="gLoaderTxt">Loading…</div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-bg" id="mReview">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title"><i class="fas fa-stamp text-hod"></i> Request Review</div>
+      <button class="modal-close" onclick="closeModal('mReview')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="mReviewBody"></div>
+    <div class="modal-foot" id="mReviewFoot"></div>
+  </div>
+</div>
+
+<!-- REPORT GENERATION MODAL -->
+<div class="modal-bg" id="mReport">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title"><i class="fas fa-file-pdf text-hod"></i> Generate Professional Report</div>
+      <button class="modal-close" onclick="closeModal('mReport')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrp">
+        <label class="flbl">Report Type</label>
+        <select class="fsel" id="rType" onchange="onReportTypeChange()">
+          <option value="consolidated">Consolidated Department Report</option>
+          <option value="yearwise">Year-wise Breakdown</option>
+          <option value="studentwise">Student-wise Summary</option>
+          <option value="daterange">Date Range Report</option>
+          <option value="monthwise">Monthly Analytics</option>
+          <option value="sectionwise">Section-wise Report</option>
+        </select>
+      </div>
+      <div id="rRangeField" style="display:none">
+        <div class="fcols2">
+          <div class="fgrp"><label class="flbl">From Date</label><input type="date" class="finp" id="rFrom"></div>
+          <div class="fgrp"><label class="flbl">To Date</label><input type="date" class="finp" id="rTo"></div>
+        </div>
+      </div>
+      <div id="rStudentField" class="fgrp" style="display:none"><label class="flbl">Search Student (Reg. No / Name)</label><input type="text" class="finp" id="rStudent" placeholder="Leave empty for all"></div>
+      <div id="rYearField" style="display:none">
+        <div class="fcols2">
+          <div class="fgrp"><label class="flbl">Year</label><select class="fsel" id="rYear"><option value="">All</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+          <div class="fgrp"><label class="flbl">Section</label><select class="fsel" id="rSection"><option value="">All</option><option>A</option><option>B</option></select></div>
+        </div>
+      </div>
+      <div id="rMonthField" class="fgrp" style="display:none"><label class="flbl">Month & Year</label><input type="month" class="finp" id="rMonth"></div>
+      <div class="fgrp">
+        <label class="flbl">Status Filter (Optional)</label>
+        <select class="fsel" id="rStatus">
+          <option value="">All Status</option>
+          <option>Approved</option><option>Rejected</option><option>Pending</option><option>Forwarded</option><option>HoD Review</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mReport')">Cancel</button>
+      <button class="btn btn-hod" onclick="generateHoDReport()"><i class="fas fa-file-download"></i> Generate PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appWrap">
+  <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sb-logo" style="background: linear-gradient(135deg, #4c1d95, #7c3aed);">IT</div>
+      <div>
+        <div class="sb-brand-name">VCET Leave Portal</div>
+        <div class="sb-brand-sub">HoD Dashboard</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-foot">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sbAvatar" style="background: linear-gradient(135deg, #4c1d95, #7c3aed);">H</div>
+        <div style="min-width:0">
+          <div class="sb-uname" id="sbName">—</div>
+          <div class="sb-urole" id="sbRole">HoD</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <div id="mainArea">
+    <div class="topbar">
+      <button class="tb-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div class="tb-title" id="tbTitle">Dashboard</div>
+      <div class="tb-actions">
+        <button class="tb-btn" onclick="refreshCurrentPage()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+        <div class="theme-pill" onclick="toggleTheme()">
+          <i class="fas fa-moon" id="themeIco"></i>
+          <span id="themeTxt">Dark</span>
+        </div>
+        <button class="tb-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+      </div>
+    </div>
+    <div class="page-body" id="pageBody"></div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+'use strict';
+
+/* ══ SESSION ══ */
+let user = JSON.parse(sessionStorage.getItem('vcet_user') || 'null');
+if (!user || user.role !== 'HoD') { window.location.href = 'index.html'; }
+
+let currentPage = '';
+let allRequestsData = [];
+let allStudentsData = [];
+
+const NAV_ITEMS = [
+  { id: 'dash',        icon: 'fa-home',               label: 'Dashboard' },
+  { id: 'pending',     icon: 'fa-stamp',              label: 'Pending Approvals' },
+  { id: 'consolidated',icon: 'fa-chart-bar',          label: 'Consolidated Report' },
+  { id: 'yearwise',    icon: 'fa-layer-group',        label: 'Year-wise Analysis' },
+  { id: 'studentwise', icon: 'fa-user-graduate',      label: 'Student Reports' },
+  { id: 'allreqs',     icon: 'fa-list-alt',           label: 'All Requests' },
+  { id: 'profile',     icon: 'fa-user-circle',        label: 'My Profile' }
+];
+
+function buildSidebar() {
+  const items = NAV_ITEMS;
+  $('sbAvatar').textContent = getInitials(user.name);
+  $('sbName').textContent = user.name;
+  $('sbRole').textContent = user.role;
+  let html = `<div class="nav-sec-label">HoD Portal</div>`;
+  items.forEach(item => {
+    html += `<button class="nav-link" id="nl_${item.id}" onclick="nav('${item.id}')">
+      <i class="fas ${item.icon}"></i><span>${item.label}</span>
+    </button>`;
+  });
+  $('sidebarNav').innerHTML = html;
+}
+
+function nav(pageId) {
+  currentPage = pageId;
+  document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+  const el = $('nl_' + pageId);
+  if (el) el.classList.add('active');
+  const titles = {
+    dash: 'HoD Dashboard',
+    pending: 'Pending Approvals',
+    consolidated: 'Consolidated Department Report',
+    yearwise: 'Year-wise Analysis',
+    studentwise: 'Student-wise Reports',
+    allreqs: 'All Requests',
+    profile: 'My Profile'
+  };
+  $('tbTitle').textContent = titles[pageId] || pageId;
+  closeSidebar();
+  loadPage(pageId);
+}
+
+function refreshCurrentPage() { if (currentPage) loadPage(currentPage); }
+
+function loadPage(id) {
+  destroyCharts();
+  const pb = $('pageBody');
+  pb.innerHTML = `<div class="sk-block mb-14">${skeleton()}</div><div class="sk-block">${skeleton(5)}</div>`;
+  const pages = {
+    dash: renderDash,
+    pending: renderPending,
+    consolidated: renderConsolidated,
+    yearwise: renderYearwise,
+    studentwise: renderStudentwise,
+    allreqs: renderAllRequests,
+    profile: renderProfile
+  };
+  const fn = pages[id];
+  if (fn) fn();
+  else pb.innerHTML = '<div class="empty-state"><i class="fas fa-question-circle"></i><p>Page not found</p></div>';
+}
+
+function doLogout() {
+  if (!confirm('Sign out from HoD Portal?')) return;
+  sessionStorage.removeItem('vcet_user');
+  window.location.href = 'index.html';
+}
+
+/* ════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════ */
+async function renderDash() {
+  const pb = $('pageBody');
+  try {
+    const res = await api('hod.getDashboard', {});
+    const d = res.data;
+    const mt = d.monthTrend || { labels: [], leave: [], od: [], medical: [] };
+
+    pb.innerHTML = `
+      <div class="welcome">
+        <div class="welcome-z">
+          <div class="welcome-title">HoD Dashboard — IT Department 🏛️</div>
+          <div class="welcome-sub">Department-wide leave & OD management oversight</div>
+          <div class="welcome-date"><i class="fas fa-calendar-day"></i> ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div class="welcome-actions">
+            <button class="btn btn-hod" onclick="nav('pending')"><i class="fas fa-stamp"></i> Review Pending</button>
+            <button class="btn btn-acc" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Generate Report</button>
+          </div>
+        </div>
+      </div>
+
+      ${d.hodPending > 0 ? `
+      <div class="hod-alert mb-20">
+        <div class="hod-alert-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="hod-alert-text">
+          <div class="hod-alert-title">${d.hodPending} Request(s) Pending Your Final Approval</div>
+          <div class="hod-alert-sub">Approved by Chairperson, awaiting your final authorization</div>
+        </div>
+        <button class="btn btn-hod btn-sm" onclick="nav('pending')" style="flex-shrink:0"><i class="fas fa-arrow-right"></i></button>
+      </div>` : ''}
+
+      <div class="stats-grid col4 mb-20">
+        ${sCard('Total Students', d.totalStudents, 'fa-user-graduate', 'sc-blue')}
+        ${sCard('Total Requests', d.totalRequests, 'fa-file-alt', 'sc-cyan')}
+        ${sCard('Fully Approved', d.approved, 'fa-check-circle', 'sc-green')}
+        ${sCard('Pending Action', d.hodPending, 'fa-stamp', 'sc-purple')}
+      </div>
+
+      <div class="stats-grid col3 mb-20">
+        ${sCard('Pending (M/C)', d.pending, 'fa-clock', 'sc-orange')}
+        ${sCard('Rejected', d.rejected, 'fa-times-circle', 'sc-red')}
+        ${sCard('Absent Entries', d.totalAbsent, 'fa-user-slash', 'sc-red')}
+      </div>
+
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i> 6-Month Trend</div></div>
+          <div class="card-body"><div class="chart-wrap-tall"><canvas id="hodTrend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Overall Distribution</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="hodDist"></canvas></div></div>
+        </div>
+      </div>`;
+
+    charts.hodTrend = new Chart($('hodTrend'), {
+      type: 'bar',
+      data: {
+        labels: mt.labels,
+        datasets: [
+          { label: 'Leave', data: mt.leave, backgroundColor: 'rgba(15,39,68,.72)', borderRadius: 5 },
+          { label: 'OD', data: mt.od, backgroundColor: 'rgba(224,92,26,.72)', borderRadius: 5 },
+          { label: 'Medical', data: mt.medical, backgroundColor: 'rgba(5,150,105,.72)', borderRadius: 5 }
+        ]
+      },
+      options: chartDefaultOpts()
+    });
+
+    charts.hodDist = new Chart($('hodDist'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Approved', 'HoD Review', 'Pending', 'Rejected'],
+        datasets: [{
+          data: [d.approved, d.hodPending || 0, d.pending, d.rejected],
+          backgroundColor: ['rgba(5,150,105,.8)', 'rgba(124,58,237,.8)', 'rgba(217,119,6,.8)', 'rgba(220,38,38,.8)'],
+          borderWidth: 0, hoverOffset: 5
+        }]
+      },
+      options: doughnutOpts()
+    });
+
+  } catch (e) { pb.innerHTML = errBlock(e.message); }
+}
+
+/* ════════════════════════════════════════════
+   PENDING APPROVALS
+════════════════════════════════════════════ */
+async function renderPending() {
+  const pb = $('pageBody');
+  try {
+    const res = await api('hod.getPending', {});
+    const reqs = res.data || [];
+    allRequestsData = reqs;
+
+    pb.innerHTML = `
+      <div class="sec-head">
+        <div>
+          <div class="sec-title"><i class="fas fa-stamp text-hod"></i> Pending Final Approvals</div>
+          <div class="sec-sub">${reqs.length} request(s) from Chairperson waiting your decision</div>
+        </div>
+      </div>
+
+      ${reqs.length > 0 ? `
+      <div class="hod-alert mb-14">
+        <div class="hod-alert-icon"><i class="fas fa-clock"></i></div>
+        <div class="hod-alert-text">
+          <div class="hod-alert-title">${reqs.length} Action(s) Required</div>
+          <div class="hod-alert-sub">These have been approved by both Mentor and Chairperson. Your approval makes them official.</div>
+        </div>
+        <button class="btn btn-suc btn-sm" onclick="approveAllPending()"><i class="fas fa-check-double"></i> Approve All</button>
+      </div>` : ''}
+
+      <div class="card">
+        <div class="filter-bar">
+          <select class="fsel" onchange="filterTbl(this.value, 'pendTbl')">
+            <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option><option>Emergency</option>
+          </select>
+          <select class="fsel" onchange="filterTbl(this.value, 'pendTbl')">
+            <option value="">All Years</option><option value="I">Year I</option><option value="II">Year II</option><option value="III">Year III</option><option value="IV">Year IV</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search student / Reg. No…" oninput="searchTbl(this.value, 'pendTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl compact-tbl" id="pendTbl">
+            <thead><tr>
+              <th>ID</th><th>Student</th><th>Yr/Sec</th><th>Type</th><th>From</th><th>To</th><th>Days</th>
+              <th>Reason</th><th>Mentor ✓</th><th>Chair ✓</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              ${reqs.length === 0
+              ? `<tr><td colspan="11"><div class="empty-state"><i class="fas fa-check-double text-suc"></i><p>No pending requests!</p></div></td></tr>`
+              : reqs.map(r => `<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo} ${r.LeaveType}">
+                  <td class="fw7 text-hod">${r.RequestID}</td>
+                  <td><div class="fw6">${r.StudentName}</div><div style="font-size:10px;color:var(--txt3)">${r.RegNo}</div></td>
+                  <td><span class="chip">${r.Year||'?'}-${r.Section||'?'}</span></td>
+                  <td>${typeBadge(r.LeaveType)}</td>
+                  <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+                  <td><span class="chip">${r.TotalDays}d</span></td>
+                  <td><span class="ellipsis" style="display:block;max-width:120px" title="${r.Reason}">${r.Reason}</span></td>
+                  <td style="font-size:11px;color:var(--suc);font-weight:700">✓ ${r.MentorStatus}</td>
+                  <td style="font-size:11px;color:var(--suc);font-weight:700">✓ ${r.ChairpersonStatus}</td>
+                  <td>
+                    <div style="display:flex;gap:4px">
+                      <button class="btn btn-suc btn-xs" onclick="quickActHoD('${r.RequestID}','Approved')" title="Approve"><i class="fas fa-check"></i></button>
+                      <button class="btn btn-dan btn-xs" onclick="quickActHoD('${r.RequestID}','Rejected')" title="Reject"><i class="fas fa-times"></i></button>
+                      <button class="btn btn-ghost btn-xs" onclick="openHoDReview('${r.RequestID}')" title="Details"><i class="fas fa-eye"></i></button>
+                    </div>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    window._pendingData = reqs;
+  } catch (e) { pb.innerHTML = errBlock(e.message); }
+}
+
+async function approveAllPending() {
+  const reqs = window._pendingData || [];
+  if (!reqs.length) { toast('No pending requests', 'war'); return; }
+  if (!confirm(`Final approve all ${reqs.length} request(s)? This action cannot be undone.`)) return;
+  showG('Processing all approvals…');
+  try {
+    for (const r of reqs) {
+      await api('hod.actOnRequest', { requestId: r.RequestID, action: 'Approved', remarks: 'Batch approved by HoD' });
+    }
+    toast(`${reqs.length} request(s) approved!`, 'suc');
+    renderPending();
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
+  finally { hideG(); }
+}
+
+async function quickActHoD(reqId, action) {
+  showG((action === 'Approved' ? 'Approving' : 'Rejecting') + '…');
+  try {
+    await api('hod.actOnRequest', { requestId: reqId, action, remarks: action });
+    toast(`Request ${action.toLowerCase()}!`, action === 'Approved' ? 'suc' : 'inf');
+    renderPending();
+  } catch (e) { toast(e.message, 'err'); }
+  finally { hideG(); }
+}
+
+async function openHoDReview(reqId) {
+  const req = (window._pendingData || []).find(r => r.RequestID === reqId);
+  if (!req) { toast('Request not found', 'err'); return; }
+  
+  const hodSt = req.HoDStatus || 'Pending';
+  $('mReviewBody').innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">Request ID</div>
+      <div style="font-size:22px;font-weight:800;color:var(--pri)">${req.RequestID}</div>
+    </div>
+    <div class="info-grid" style="margin-bottom:14px">
+      <div class="info-item"><label>Student Name</label><p>${req.StudentName}</p></div>
+      <div class="info-item"><label>Reg. No</label><p>${req.RegNo}</p></div>
+      <div class="info-item"><label>Year / Section</label><p>${req.Year||'—'} / ${req.Section||'—'}</p></div>
+      <div class="info-item"><label>Type</label><p>${req.LeaveType}</p></div>
+      <div class="info-item"><label>From</label><p>${fmtDate(req.FromDate)}</p></div>
+      <div class="info-item"><label>To</label><p>${fmtDate(req.ToDate)}</p></div>
+      <div class="info-item"><label>Days</label><p>${req.TotalDays}</p></div>
+      <div class="info-item"><label>Applied</label><p>${fmtDate(req.ApplyDate)}</p></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div class="flbl" style="margin-bottom:5px">Reason</div>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:11px;font-size:13px;border:1px solid var(--border)">${req.Reason}</div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Approval Trail</div>
+    <div class="timeline">
+      <div class="tl-item ${req.MentorStatus.toLowerCase()}">
+        <div class="tl-date">Mentor: ${req.MentorStatus}</div>
+        <div class="tl-text">${req.MentorRemarks || '—'}</div>
+      </div>
+      <div class="tl-item ${req.ChairpersonStatus.toLowerCase()}">
+        <div class="tl-date">Chairperson: ${req.ChairpersonStatus}</div>
+        <div class="tl-text">${req.ChairpersonRemarks || '—'}</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="fgrp">
+      <label class="flbl">Your Remarks (Optional)</label>
+      <textarea class="ftxt" id="hodRemarks" style="min-height:60px" placeholder="Add your final remarks…"></textarea>
+    </div>`;
+
+  $('mReviewFoot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('mReview')">Close</button>
+    <button class="btn btn-dan" onclick="finalActHoD('${reqId}', 'Rejected')"><i class="fas fa-times"></i> Reject</button>
+    <button class="btn btn-suc" onclick="finalActHoD('${reqId}', 'Approved')"><i class="fas fa-stamp"></i> Final Approve</button>`;
+  openModal('mReview');
+}
+
+async function finalActHoD(reqId, action) {
+  const remarks = ($('hodRemarks') || {}).value || '';
+  closeModal('mReview');
+  showG((action === 'Approved' ? 'Finalizing approval' : 'Rejecting') + '…');
+  try {
+    await api('hod.actOnRequest', { requestId: reqId, action, remarks });
+    toast(`Request ${action.toLowerCase()}!`, action === 'Approved' ? 'suc' : 'inf');
+    renderPending();
+  } catch (e) { toast(e.message, 'err'); }
+  finally { hideG(); }
+}
+
+/* ════════════════════════════════════════════
+   CONSOLIDATED REPORT
+════════════════════════════════════════════ */
+async function renderConsolidated() {
+  const pb = $('pageBody');
+  try {
+    const res = await api('hod.getAllRequests', {});
+    const all = res.data || [];
+    allRequestsData = all;
+
+    const approved = all.filter(r => r.FinalStatus === 'Approved');
+    const rejected = all.filter(r => r.FinalStatus === 'Rejected');
+    const pending = all.filter(r => ['Pending','Forwarded','HoD Review'].includes(r.FinalStatus));
+    const leave = all.filter(r => r.LeaveType === 'Leave');
+    const od = all.filter(r => r.LeaveType === 'OD');
+    const medical = all.filter(r => r.LeaveType === 'Medical');
+    
+    const approvalRate = all.length > 0 ? Math.round(approved.length / all.length * 100) : 0;
+    const totalDays = approved.reduce((s,r) => s + (+r.TotalDays||0), 0);
+
+    pb.innerHTML = `
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Consolidated Department Report</div>
+          <div class="sec-sub">Comprehensive summary of all leave & OD requests</div>
+        </div>
+        <button class="btn btn-hod" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="report-grid">
+        <div class="report-card">
+          <div class="report-label">Total Requests</div>
+          <div class="report-value">${all.length}</div>
+        </div>
+        <div class="report-card green">
+          <div class="report-label">Approved</div>
+          <div class="report-value">${approved.length}</div>
+          <div style="font-size:11px;color:var(--suc);margin-top:4px">${approvalRate}% approval</div>
+        </div>
+        <div class="report-card orange">
+          <div class="report-label">Pending</div>
+          <div class="report-value">${pending.length}</div>
+        </div>
+        <div class="report-card red">
+          <div class="report-label">Rejected</div>
+          <div class="report-value">${rejected.length}</div>
+        </div>
+        <div class="report-card purple">
+          <div class="report-label">Approved Days</div>
+          <div class="report-value">${totalDays}</div>
+        </div>
+        <div class="report-card green">
+          <div class="report-label">Leave Type</div>
+          <div class="report-value">${leave.length}</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:4px">L: ${leave.length} | OD: ${od.length} | M: ${medical.length}</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i> Leave Type Distribution</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="consBar"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Status Distribution</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="consPie"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Detailed Table -->
+      <div class="card">
+        <div class="filter-bar">
+          <select class="fsel" onchange="filterTbl(this.value, 'consTbl')">
+            <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option>
+          </select>
+          <select class="fsel" onchange="filterTbl(this.value, 'consTbl')">
+            <option value="">All Status</option><option>Approved</option><option>Rejected</option><option>Pending</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search…" oninput="searchTbl(this.value, 'consTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl compact-tbl" id="consTbl">
+            <thead><tr>
+              <th>ID</th><th>Student</th><th>Reg. No</th><th>Type</th><th>From</th><th>To</th><th>Days</th>
+              <th>Mentor</th><th>Chair</th><th>HoD</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${all.length === 0
+              ? `<tr><td colspan="11"><div class="empty-state"><i class="fas fa-inbox"></i><p>No requests found</p></div></td></tr>`
+              : all.map(r => `<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo} ${r.LeaveType} ${r.FinalStatus}">
+                  <td class="fw7 text-pri">${r.RequestID}</td>
+                  <td class="fw6">${r.StudentName}</td>
+                  <td>${r.RegNo}</td>
+                  <td>${typeBadge(r.LeaveType)}</td>
+                  <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+                  <td><span class="chip">${r.TotalDays}d</span></td>
+                  <td style="font-size:11px">${r.MentorStatus}</td>
+                  <td style="font-size:11px">${r.ChairpersonStatus}</td>
+                  <td style="font-size:11px">${r.HoDStatus||'—'}</td>
+                  <td>${statusBadge(r.FinalStatus)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    // Charts
+    charts.consBar = new Chart($('consBar'), {
+      type: 'bar',
+      data: {
+        labels: ['Leave', 'OD', 'Medical', 'Emergency'],
+        datasets: [{
+          label: 'Count',
+          data: [
+            leave.length, od.length, medical.length,
+            all.filter(r => r.LeaveType === 'Emergency').length
+          ],
+          backgroundColor: ['rgba(15,39,68,.75)', 'rgba(224,92,26,.75)', 'rgba(5,150,105,.75)', 'rgba(217,119,6,.75)'],
+          borderRadius: 6
+        }]
+      },
+      options: chartDefaultOpts()
+    });
+
+    charts.consPie = new Chart($('consPie'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Approved', 'HoD Review', 'Pending/Fwd', 'Rejected'],
+        datasets: [{
+          data: [
+            approved.length,
+            all.filter(r => r.FinalStatus === 'HoD Review').length,
+            all.filter(r => ['Pending','Forwarded'].includes(r.FinalStatus)).length,
+            rejected.length
+          ],
+          backgroundColor: ['rgba(5,150,105,.8)', 'rgba(124,58,237,.8)', 'rgba(217,119,6,.8)', 'rgba(220,38,38,.8)'],
+          borderWidth: 0, hoverOffset: 5
+        }]
+      },
+      options: doughnutOpts()
+    });
+
+  } catch (e) { pb.innerHTML = errBlock(e.message); }
+}
+
+/* ════════════════════════════════════════════
+   YEAR-WISE ANALYSIS
+════════════════════════════════════════════ */
+async function renderYearwise() {
+  const pb = $('pageBody');
+  try {
+    const res = await api('hod.getYearwise', {});
+    const data = res.data || [];
+
+    pb.innerHTML = `
+      <div class="sec-head"><div class="sec-title">Year-wise Analysis</div></div>
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i> Leave Distribution by Year</div></div>
+          <div class="card-body"><div class="chart-wrap-tall"><canvas id="yrBar"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-line"></i> Approval Rate by Year</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="yrLine"></canvas></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i class="fas fa-table"></i> Year-wise Summary</div></div>
+        <div class="tbl-wrap">
+          <table class="tbl compact-tbl">
+            <thead><tr><th>Year</th><th>Leave</th><th>OD</th><th>Medical</th><th>Approved</th><th>Rejected</th><th>Pending</th><th>Approval %</th></tr></thead>
+            <tbody>
+              ${data.map(r => {
+                const total = r.leave + r.od + r.medical;
+                const pct = total > 0 ? Math.round(r.approved / total * 100) : 0;
+                return `<tr>
+                  <td class="fw7">${r.year} Year</td>
+                  <td>${r.leave}</td><td>${r.od}</td><td>${r.medical}</td>
+                  <td class="text-suc fw6">${r.approved}</td>
+                  <td class="text-dan fw6">${r.rejected}</td>
+                  <td class="text-war fw6">${r.pending}</td>
+                  <td><div style="display:flex;align-items:center;gap:6px">
+                    <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${pct}%;background:var(--suc)"></div></div>
+                    <span style="font-size:11px;font-weight:700">${pct}%</span>
+                  </div></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    const labels = data.map(r => r.year + ' Year');
+    charts.yrBar = new Chart($('yrBar'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Leave', data: data.map(r => r.leave), backgroundColor: 'rgba(15,39,68,.72)', borderRadius: 5 },
+          { label: 'OD', data: data.map(r => r.od), backgroundColor: 'rgba(224,92,26,.72)', borderRadius: 5 },
+          { label: 'Medical', data: data.map(r => r.medical), backgroundColor: 'rgba(5,150,105,.72)', borderRadius: 5 }
+        ]
+      },
+      options: chartDefaultOpts()
+    });
+
+    charts.yrLine = new Chart($('yrLine'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Approval %',
+          data: data.map(r => r.leave + r.od + r.medical > 0 ? Math.round(r.approved / (r.leave + r.od + r.medical) * 100) : 0),
+          borderColor: 'rgba(5,150,105,.8)',
+          backgroundColor: 'rgba(5,150,105,.1)',
+          tension: .4, fill: true, pointRadius: 5, borderWidth: 3
+        }]
+      },
+      options: chartDefaultOpts()
+    });
+
+  } catch (e) { pb.innerHTML = errBlock(e.message); }
+}
+
+/* ════════════════════════════════════════════
+   STUDENT-WISE REPORTS
+════════════════════════════════════════════ */
+async function renderStudentwise() {
+  const pb = $('pageBody');
+  pb.innerHTML = `
+    <div class="sec-head"><div class="sec-title">Student-wise Reports</div></div>
+    <div class="card mb-14">
+      <div class="card-head"><div class="card-title"><i class="fas fa-filter"></i> Search & Filter</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;align-items:flex-end">
+          <div class="fgrp" style="margin:0"><label class="flbl">Search (Reg. No / Name)</label><input type="text" class="finp" id="swSearch" placeholder=""></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Year</label><select class="fsel" id="swYear"><option value="">All</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Section</label><select class="fsel" id="swSec"><option value="">All</option><option>A</option><option>B</option></select></div>
+          <button class="btn btn-hod" onclick="loadStudentwise()"><i class="fas fa-search"></i> Search</button>
+        </div>
+      </div>
+    </div>
+    <div id="swResult"><div class="empty-state"><i class="fas fa-search"></i><p>Apply filters and click Search</p></div></div>`;
+}
+
+async function loadStudentwise() {
+  const payload = {
+    search: $('swSearch').value.trim(),
+    year: $('swYear').value,
+    section: $('swSec').value
+  };
+  const container = $('swResult');
+  container.innerHTML = skeleton(4);
+  try {
+    const res = await api('hod.getStudentwise', payload);
+    const data = res.data || [];
+    allStudentsData = data;
+
+    container.innerHTML = `<div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fas fa-users"></i> ${data.length} Student(s) Found</div>
+        <button class="btn btn-hod btn-sm" onclick="exportStudentwise()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl compact-tbl">
+          <thead><tr>
+            <th>Reg. No</th><th>Name</th><th>Year/Sec</th><th>Total Req.</th><th>Leave Days</th><th>OD Days</th><th>Approved</th><th>Rejected</th><th>Pending</th>
+          </tr></thead>
+          <tbody>
+            ${data.length === 0
+            ? `<tr><td colspan="9"><div class="empty-state"><i class="fas fa-search"></i><p>No students found</p></div></td></tr>`
+            : data.map(s => `<tr>
+                <td class="fw7 text-pri">${s.RegNo}</td>
+                <td class="fw6">${s.StudentName}</td>
+                <td><span class="chip">${s.Year}-${s.Section}</span></td>
+                <td>${s.totalRequests}</td>
+                <td>${s.leaveDays}</td><td>${s.odDays}</td>
+                <td class="text-suc fw6">${s.approved}</td>
+                <td class="text-dan fw6">${s.rejected}</td>
+                <td class="text-war fw6">${s.pending}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  } catch (e) { container.innerHTML = errBlock(e.message); }
+}
+
+function exportStudentwise() {
+  const data = allStudentsData;
+  if (!data || !data.length) { toast('No data to export', 'war'); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const pw = doc.internal.pageSize.getWidth();
+
+  doc.setFillColor(124, 58, 237); doc.rect(0, 0, pw, 20, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('VCET-IT | Student-wise Leave Report', pw / 2, 8, { align: 'center' });
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text(`Generated: ${new Date().toLocaleString('en-IN')} | HoD: ${user.name}`, pw / 2, 15, { align: 'center' });
+
+  doc.autoTable({
+    startY: 24,
+    head: [['Reg. No', 'Name', 'Year', 'Section', 'Total Requests', 'Leave Days', 'OD Days', 'Approved', 'Rejected', 'Pending']],
+    body: data.map(s => [s.RegNo, s.StudentName, s.Year, s.Section, s.totalRequests, s.leaveDays, s.odDays, s.approved, s.rejected, s.pending]),
+    styles: { fontSize: 8, cellPadding: 2.5, font: 'helvetica' },
+    headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [240, 247, 255] }
+  });
+
+  doc.setFontSize(7); doc.setTextColor(150);
+  doc.text(`Page 1 of 1 | Confidential`, pw / 2, doc.internal.pageSize.getHeight() - 4, { align: 'center' });
+  doc.save(`VCET_StudentReport_${new Date().toISOString().split('T')[0]}.pdf`);
+  toast('PDF downloaded!', 'suc');
+}
+
+/* ════════════════════════════════════════════
+   ALL REQUESTS
+════════════════════════════════════════════ */
+async function renderAllRequests() {
+  const pb = $('pageBody');
+  try {
+    const res = await api('hod.getAllRequests', {});
+    const all = res.data || [];
+    allRequestsData = all;
+
+    pb.innerHTML = `
+      <div class="sec-head">
+        <div><div class="sec-title">All Department Requests</div><div class="sec-sub">${all.length} total records</div></div>
+        <button class="btn btn-hod" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Generate Report</button>
+      </div>
+      <div class="card">
+        <div class="filter-bar">
+          <select class="fsel" onchange="filterTbl(this.value, 'allTbl')">
+            <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option>
+          </select>
+          <select class="fsel" onchange="filterTbl(this.value, 'allTbl')">
+            <option value="">All Status</option><option>Approved</option><option>HoD Review</option><option>Pending</option><option>Rejected</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search…" oninput="searchTbl(this.value, 'allTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl compact-tbl" id="allTbl">
+            <thead><tr>
+              <th>ID</th><th>Student</th><th>Reg. No</th><th>Year/Sec</th><th>Type</th><th>From</th><th>To</th><th>Days</th>
+              <th>Mentor</th><th>Chair</th><th>HoD</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              ${all.length === 0
+              ? `<tr><td colspan="12"><div class="empty-state"><i class="fas fa-inbox"></i><p>No requests found</p></div></td></tr>`
+              : all.map(r => `<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo} ${r.LeaveType} ${r.FinalStatus}">
+                  <td class="fw7 text-pri">${r.RequestID}</td>
+                  <td class="fw6">${r.StudentName}</td>
+                  <td>${r.RegNo}</td>
+                  <td><span class="chip">${r.Year||'?'}-${r.Section||'?'}</span></td>
+                  <td>${typeBadge(r.LeaveType)}</td>
+                  <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+                  <td><span class="chip">${r.TotalDays}d</span></td>
+                  <td style="font-size:11px">${r.MentorStatus}</td>
+                  <td style="font-size:11px">${r.ChairpersonStatus}</td>
+                  <td style="font-size:11px">${r.HoDStatus||'—'}</td>
+                  <td>${statusBadge(r.FinalStatus)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (e) { pb.innerHTML = errBlock(e.message); }
+}
+
+/* ════════════════════════════════════════════
+   PROFILE
+════════════════════════════════════════════ */
+async function renderProfile() {
+  const pb = $('pageBody');
+  pb.innerHTML = `
+    <div class="sec-head"><div class="sec-title">My Profile</div></div>
+    <div style="max-width:600px">
+      <div class="card" style="overflow:hidden">
+        <div style="background:linear-gradient(135deg,#4c1d95,#7c3aed);padding:24px;display:flex;align-items:center;gap:16px;color:#fff">
+          <div style="width:56px;height:56px;background:rgba(255,255,255,.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;font-family:var(--font-serif)">${getInitials(user.name)}</div>
+          <div>
+            <div style="font-size:18px;font-weight:700">${user.name}</div>
+            <div style="font-size:12px;opacity:.8;margin-top:2px">Head of Department • Information Technology</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="info-item"><label>Login ID</label><p>${user.loginId}</p></div>
+            <div class="info-item"><label>Role</label><p>${user.role}</p></div>
+            <div class="info-item"><label>Department</label><p>Information Technology</p></div>
+          </div>
+          <div class="divider"></div>
+          <div style="margin-bottom:14px">
+            <div class="flbl" style="margin-bottom:10px">Change Password</div>
+            <div class="fcols2">
+              <div class="fgrp"><label class="flbl">Current Password</label><input type="password" class="finp" id="cpOld" placeholder=""></div>
+              <div class="fgrp"><label class="flbl">New Password</label><input type="password" class="finp" id="cpNew" placeholder=""></div>
+            </div>
+          </div>
+          <button class="btn btn-hod" onclick="changePassword()"><i class="fas fa-key"></i> Update Password</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function changePassword() {
+  const old = $('cpOld').value.trim(), nw = $('cpNew').value.trim();
+  if (!old || !nw) { toast('Fill both fields', 'war'); return; }
+  if (nw.length < 4) { toast('Min 4 characters', 'war'); return; }
+  try {
+    showG('Updating…');
+    await api('changePassword', { loginId: user.loginId, oldPassword: old, newPassword: nw });
+    toast('Password updated!', 'suc'); $('cpOld').value = ''; $('cpNew').value = '';
+  } catch(e) { toast(e.message, 'err'); }
+  finally { hideG(); }
+}
+
+/* ════════════════════════════════════════════
+   REPORT GENERATION
+════════════════════════════════════════════ */
+function onReportTypeChange() {
+  const t = $('rType').value;
+  $('rRangeField').style.display = t === 'daterange' ? 'block' : 'none';
+  $('rStudentField').style.display = t === 'studentwise' ? 'block' : 'none';
+  $('rYearField').style.display = ['yearwise', 'sectionwise'].includes(t) ? 'block' : 'none';
+  $('rMonthField').style.display = t === 'monthwise' ? 'block' : 'none';
+}
+
+async function generateHoDReport() {
+  closeModal('mReport');
+  showG('Generating report…');
+  try {
+    const type = $('rType').value;
+    let payload = { status: $('rStatus').value };
+
+    if (type === 'daterange') {
+      payload.fromDate = $('rFrom').value;
+      payload.toDate = $('rTo').value;
+    } else if (type === 'studentwise') {
+      payload.search = $('rStudent').value;
+    } else if (type === 'yearwise') {
+      payload.year = $('rYear').value;
+      payload.section = $('rSection').value;
+    } else if (type === 'monthwise') {
+      const m = $('rMonth').value;
+      if (m) { payload.fromDate = m + '-01'; payload.toDate = m + '-31'; }
+    }
+
+    const res = await api('hod.getAllRequests', payload);
+    let data = res.data || [];
+    if (payload.status) data = data.filter(r => r.FinalStatus === payload.status);
+
+    generateProfessionalPDF(data, type);
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
+  finally { hideG(); }
+}
+
+function generateProfessionalPDF(data, reportType = 'consolidated') {
+  if (!data || !data.length) { toast('No data found', 'war'); return; }
+  
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4');
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  // Header
+  doc.setFillColor(15, 39, 68); doc.rect(0, 0, pw, 30, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  doc.text('VELAMMAL COLLEGE OF ENGINEERING & TECHNOLOGY', pw / 2, 10, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text('Department of Information Technology', pw / 2, 16, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text('Leave & OD Sanction Analysis Report', pw / 2, 22, { align: 'center' });
+  doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+  doc.text(`Type: ${reportType.toUpperCase()} | Generated: ${new Date().toLocaleString('en-IN')} | By: ${user.name} (HoD)`, pw / 2, 27, { align: 'center' });
+
+  // Summary Section
+  const approved = data.filter(r => r.FinalStatus === 'Approved').length;
+  const rejected = data.filter(r => r.FinalStatus === 'Rejected').length;
+  const leave = data.filter(r => r.LeaveType === 'Leave').length;
+  const od = data.filter(r => r.LeaveType === 'OD').length;
+
+  doc.setTextColor(15, 39, 68); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+  const summaries = [
+    `TOTAL: ${data.length}`,
+    `✓ APPROVED: ${approved}`,
+    `✗ REJECTED: ${rejected}`,
+    `L: ${leave} | OD: ${od}`,
+    `APPROVAL: ${data.length > 0 ? Math.round(approved / data.length * 100) : 0}%`
+  ];
+  summaries.forEach((s, i) => doc.text(s, 14 + i * 42, 35));
+
+  // Main Table
+  doc.autoTable({
+    startY: 40,
+    head: [['Req ID', 'Reg No', 'Student Name', 'Yr/Sec', 'Type', 'From', 'To', 'Days', 'Mentor', 'Chair', 'HoD', 'Status']],
+    body: data.map(r => [
+      r.RequestID, r.RegNo, r.StudentName,
+      (r.Year||'?') + '-' + (r.Section||'?'),
+      r.LeaveType, r.FromDate, r.ToDate, r.TotalDays,
+      r.MentorStatus, r.ChairpersonStatus, r.HoDStatus||'—', r.FinalStatus
+    ]),
+    styles: { fontSize: 6.5, cellPadding: 2, font: 'helvetica', overflow: 'linebreak' },
+    headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold', fontSize: 7 },
+    alternateRowStyles: { fillColor: [245, 242, 255] },
+    margin: { top: 40 }
+  });
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(6);
+    doc.setTextColor(150);
+    doc.text(`Page ${i} of ${pageCount} | VCET-IT Leave Management System | Confidential Report`, pw / 2, ph - 3, { align: 'center' });
+  }
+
+  doc.save(`VCET_${reportType}_${new Date().toISOString().split('T')[0]}.pdf`);
+  toast('Professional PDF generated!', 'suc');
+}
+
+/* ══ INIT ══ */
+buildSidebar();
+nav('dash');
+</script>
+</body>
+</html>

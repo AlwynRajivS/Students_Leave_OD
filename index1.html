@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>VCET-IT | Leave & OD Sanction System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+:root {
+  --pri:       #0f2744;
+  --pri-mid:   #1a3c6e;
+  --pri-light: #2563a8;
+  --acc:       #e05c1a;
+  --acc-light: #f97316;
+  --suc:       #059669;
+  --war:       #d97706;
+  --dan:       #dc2626;
+  --inf:       #0891b2;
+  --hod:       #7c3aed;
+
+  --bg:        #eef2f7;
+  --surface:   #ffffff;
+  --surface2:  #f8fafc;
+  --border:    #dde6f0;
+  --border2:   #c8d8e8;
+
+  --sidebar-w: 252px;
+  --sidebar-bg: #091829;
+  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-txt:    #7a9ab8;
+  --sidebar-txt-active: #ffffff;
+
+  --txt:       #0f2744;
+  --txt2:      #4a6080;
+  --txt3:      #8fa8c0;
+
+  --shadow-sm: 0 1px 3px rgba(15,39,68,.08), 0 1px 2px rgba(15,39,68,.04);
+  --shadow:    0 4px 16px rgba(15,39,68,.10);
+  --shadow-lg: 0 10px 40px rgba(15,39,68,.15);
+
+  --r:   12px;
+  --r-sm: 8px;
+  --r-xs: 6px;
+  --tr: .18s ease;
+
+  --font: 'Plus Jakarta Sans', sans-serif;
+  --font-serif: 'Instrument Serif', serif;
+}
+[data-theme="dark"] {
+  --bg:       #060e1a;
+  --surface:  #0d1e32;
+  --surface2: #0a1826;
+  --border:   #1c3050;
+  --border2:  #253d5a;
+  --txt:      #d8e8f4;
+  --txt2:     #7a9ab8;
+  --txt3:     #3d5870;
+  --sidebar-bg: #050d18;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow:    0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,.5);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+button{font-family:var(--font);cursor:pointer}
+input,select,textarea{font-family:var(--font)}
+img{max-width:100%}
+
+/* ── LAYOUT ── */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#060e1a 0%,#0f2744 45%,#1a3c6e 100%);position:relative;overflow:hidden}
+#loginScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='white' fill-opacity='.04'/%3E%3C/svg%3E") repeat;pointer-events:none}
+#appWrap{display:none;min-height:100vh}
+
+/* ── LOGIN CARD ── */
+.login-card{background:var(--surface);border-radius:20px;padding:44px 40px;width:100%;max-width:420px;box-shadow:0 40px 100px rgba(0,0,0,.45);position:relative;z-index:1}
+@media(max-width:480px){.login-card{padding:32px 24px;border-radius:16px;margin:0 16px}}
+.lc-badge{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.lc-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--pri),var(--pri-light));border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
+.lc-college{font-size:11px;font-weight:700;color:var(--pri);letter-spacing:1.2px;text-transform:uppercase;line-height:1.3}
+.lc-dept{font-size:10px;color:var(--txt3);margin-top:2px;font-weight:500}
+.lc-title{font-family:var(--font-serif);font-size:28px;color:var(--txt);margin-bottom:4px;line-height:1.2}
+.lc-sub{font-size:13px;color:var(--txt2);margin-bottom:28px}
+.form-grp{margin-bottom:16px}
+.form-lbl{display:block;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.form-inp{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--txt);font-size:14px;transition:border-color var(--tr),box-shadow var(--tr)}
+.form-inp:focus{outline:none;border-color:var(--pri-light);box-shadow:0 0 0 3px rgba(37,99,168,.12);background:var(--surface)}
+.inp-wrap{position:relative}
+.inp-wrap .form-inp{padding-right:42px}
+.inp-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--txt3);padding:4px;border-radius:4px;font-size:14px}
+.inp-eye:hover{color:var(--txt2)}
+.btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--pri) 0%,var(--pri-light) 100%);color:#fff;border:none;border-radius:var(--r-sm);font-size:15px;font-weight:700;letter-spacing:.3px;transition:all var(--tr);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,168,.35)}
+.btn-login:active{transform:translateY(0)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.login-err{margin-top:14px;padding:10px 14px;background:rgba(220,38,38,.08);border-left:3px solid var(--dan);border-radius:var(--r-xs);font-size:13px;color:var(--dan);display:none}
+.login-footer{margin-top:20px;text-align:center;font-size:11px;color:var(--txt3)}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--sidebar-bg);display:flex;flex-direction:column;z-index:200;transition:transform var(--tr);overflow:hidden}
+.sidebar-head{padding:18px 16px;border-bottom:1px solid var(--sidebar-border);display:flex;align-items:center;gap:12px;min-height:68px}
+.sb-logo{width:34px;height:34px;background:var(--acc);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0;font-family:var(--font-serif);font-style:italic}
+.sb-brand-name{font-size:12px;font-weight:700;color:#fff;letter-spacing:.4px;white-space:nowrap;line-height:1.2}
+.sb-brand-sub{font-size:9px;color:var(--sidebar-txt);white-space:nowrap;letter-spacing:.5px;margin-top:1px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent}
+.sidebar-nav::-webkit-scrollbar{width:3px}
+.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
+.nav-sec-label{padding:8px 18px 4px;font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.2);text-transform:uppercase}
+.nav-link{display:flex;align-items:center;gap:11px;padding:9px 18px;color:var(--sidebar-txt);transition:all var(--tr);cursor:pointer;position:relative;border:none;background:none;width:100%;text-align:left}
+.nav-link::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--acc);border-radius:0 3px 3px 0;opacity:0;transition:opacity var(--tr)}
+.nav-link:hover{background:rgba(255,255,255,.04);color:#c8ddef}
+.nav-link.active{background:rgba(224,92,26,.1);color:#fff}
+.nav-link.active::before{opacity:1}
+.nav-link i{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.nav-link span{font-size:13px;font-weight:500;flex:1}
+.nav-badge{background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;min-width:18px;text-align:center}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--sidebar-border)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--r-sm);cursor:default}
+.sb-avatar{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--pri-light),var(--acc));display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:148px}
+.sb-urole{font-size:10px;color:var(--sidebar-txt);white-space:nowrap}
+
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;backdrop-filter:blur(2px)}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sb-overlay.show{display:block}
+  #mainArea{margin-left:0!important}
+}
+
+/* ── MAIN AREA ── */
+#mainArea{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column;transition:margin var(--tr)}
+.topbar{height:64px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.tb-toggle{background:none;border:none;color:var(--txt2);padding:8px;border-radius:var(--r-xs);font-size:18px;transition:all var(--tr)}
+.tb-toggle:hover{background:var(--surface2);color:var(--pri)}
+.tb-title{font-weight:700;font-size:17px;color:var(--txt);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-actions{display:flex;align-items:center;gap:6px}
+.tb-btn{background:none;border:none;color:var(--txt2);padding:8px 10px;border-radius:var(--r-xs);font-size:15px;transition:all var(--tr);position:relative}
+.tb-btn:hover{background:var(--surface2);color:var(--pri)}
+.theme-pill{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--txt2);transition:all var(--tr)}
+.theme-pill:hover{border-color:var(--border2);color:var(--txt)}
+.tb-logout{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.15);color:var(--dan);padding:7px 14px;border-radius:var(--r-xs);font-size:12px;font-weight:600;transition:all var(--tr);display:flex;align-items:center;gap:6px}
+.tb-logout:hover{background:var(--dan);color:#fff}
+
+.page-body{flex:1;padding:22px;overflow-x:hidden}
+@media(max-width:600px){.page-body{padding:14px}}
+.page-section{display:none;animation:fadeUp .25s ease}
+.page-section.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── WELCOME BANNER ── */
+.welcome{background:linear-gradient(135deg,var(--pri) 0%,var(--pri-mid) 50%,var(--pri-light) 100%);border-radius:var(--r);padding:24px 28px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden}
+.welcome::before,.welcome::after{content:'';position:absolute;border-radius:50%}
+.welcome::before{width:200px;height:200px;right:-40px;top:-60px;background:rgba(255,255,255,.05)}
+.welcome::after{width:120px;height:120px;right:60px;bottom:-50px;background:rgba(255,255,255,.04)}
+.welcome-z{position:relative;z-index:1}
+.welcome-title{font-family:var(--font-serif);font-size:22px;line-height:1.2;margin-bottom:4px}
+.welcome-sub{font-size:13px;opacity:.8;margin-bottom:16px}
+.welcome-date{font-size:11px;opacity:.6;display:flex;align-items:center;gap:6px}
+.welcome-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:500px){.welcome{padding:18px 18px}.welcome-title{font-size:18px}}
+
+/* ── HoD APPROVAL BANNER ── */
+.hod-alert{background:linear-gradient(135deg,#4c1d95,#7c3aed);border-radius:var(--r);padding:16px 20px;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.hod-alert::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)}
+.hod-alert-icon{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hod-alert-text{flex:1}
+.hod-alert-title{font-weight:700;font-size:14px}
+.hod-alert-sub{font-size:12px;opacity:.8;margin-top:2px}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;gap:14px;margin-bottom:20px}
+.stats-grid.col4{grid-template-columns:repeat(4,1fr)}
+.stats-grid.col3{grid-template-columns:repeat(3,1fr)}
+.stats-grid.col2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.stats-grid.col4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.stats-grid.col4,.stats-grid.col3,.stats-grid.col2{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:380px){.stats-grid.col4,.stats-grid.col3{grid-template-columns:1fr}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:transform var(--tr),box-shadow var(--tr)}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.sc-blue::after{background:linear-gradient(90deg,var(--pri),var(--pri-light))}
+.sc-orange::after{background:linear-gradient(90deg,var(--acc),var(--acc-light))}
+.sc-green::after{background:linear-gradient(90deg,var(--suc),#34d399)}
+.sc-red::after{background:linear-gradient(90deg,var(--dan),#f87171)}
+.sc-cyan::after{background:linear-gradient(90deg,var(--inf),#22d3ee)}
+.sc-purple::after{background:linear-gradient(90deg,var(--hod),#a78bfa)}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:12px}
+.sc-blue .stat-icon{background:rgba(15,39,68,.08);color:var(--pri)}
+.sc-orange .stat-icon{background:rgba(224,92,26,.08);color:var(--acc)}
+.sc-green .stat-icon{background:rgba(5,150,105,.08);color:var(--suc)}
+.sc-red .stat-icon{background:rgba(220,38,38,.08);color:var(--dan)}
+.sc-cyan .stat-icon{background:rgba(8,145,178,.08);color:var(--inf)}
+.sc-purple .stat-icon{background:rgba(124,58,237,.08);color:var(--hod)}
+[data-theme="dark"] .sc-blue .stat-icon{background:rgba(37,99,168,.15)}
+[data-theme="dark"] .sc-orange .stat-icon{background:rgba(224,92,26,.15)}
+[data-theme="dark"] .sc-green .stat-icon{background:rgba(5,150,105,.15)}
+[data-theme="dark"] .sc-red .stat-icon{background:rgba(220,38,38,.15)}
+[data-theme="dark"] .sc-cyan .stat-icon{background:rgba(8,145,178,.15)}
+[data-theme="dark"] .sc-purple .stat-icon{background:rgba(124,58,237,.15)}
+.stat-val{font-weight:800;font-size:26px;color:var(--txt);line-height:1;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:11px;color:var(--txt2);margin-top:3px;font-weight:500}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden}
+.card-head{padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-weight:700;font-size:14px;color:var(--txt);display:flex;align-items:center;gap:7px}
+.card-title i{color:var(--acc);font-size:13px}
+.card-body{padding:16px 18px 18px}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap-tall{position:relative;height:280px}
+
+/* ── GRID LAYOUTS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:900px){.grid-2-1{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
+@media(max-width:560px){.grid-3{grid-template-columns:1fr}}
+.mb-14{margin-bottom:14px}
+.mb-20{margin-bottom:20px}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.tbl{width:100%;border-collapse:collapse;min-width:500px}
+table.tbl th{padding:9px 13px;background:var(--surface2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txt2);border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
+table.tbl td{padding:10px 13px;border-bottom:1px solid var(--border);font-size:13px;color:var(--txt);vertical-align:middle}
+table.tbl tbody tr:hover{background:rgba(37,99,168,.03)}
+table.tbl tbody tr:last-child td{border-bottom:none}
+[data-theme="dark"] table.tbl tbody tr:hover{background:rgba(37,99,168,.06)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge-pending{background:rgba(217,119,6,.1);color:var(--war)}.badge-pending::before{background:var(--war)}
+.badge-approved{background:rgba(5,150,105,.1);color:var(--suc)}.badge-approved::before{background:var(--suc)}
+.badge-rejected{background:rgba(220,38,38,.1);color:var(--dan)}.badge-rejected::before{background:var(--dan)}
+.badge-forwarded{background:rgba(8,145,178,.1);color:var(--inf)}.badge-forwarded::before{background:var(--inf)}
+/* ── NEW: HoD Review badge ── */
+.badge-hodreview{background:rgba(124,58,237,.1);color:var(--hod)}.badge-hodreview::before{background:var(--hod)}
+.badge-leave{background:rgba(15,39,68,.08);color:var(--pri);border-radius:6px}.badge-leave::before{display:none}
+.badge-od{background:rgba(224,92,26,.1);color:var(--acc);border-radius:6px}.badge-od::before{display:none}
+.badge-medical{background:rgba(5,150,105,.1);color:var(--suc);border-radius:6px}.badge-medical::before{display:none}
+.badge-emergency{background:rgba(220,38,38,.1);color:var(--dan);border-radius:6px}.badge-emergency::before{display:none}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--tr);white-space:nowrap;font-family:var(--font)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn-pri{background:linear-gradient(135deg,var(--pri),var(--pri-light));color:#fff}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,168,.3)}
+.btn-acc{background:linear-gradient(135deg,var(--acc),var(--acc-light));color:#fff}
+.btn-acc:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(224,92,26,.3)}
+.btn-suc{background:var(--suc);color:#fff}
+.btn-suc:hover{background:#047857;transform:translateY(-1px)}
+.btn-dan{background:var(--dan);color:#fff}
+.btn-dan:hover{background:#b91c1c;transform:translateY(-1px)}
+.btn-ghost{background:none;border:1.5px solid var(--border);color:var(--txt2)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--txt)}
+.btn-wa{background:#25d366;color:#fff}
+.btn-wa:hover{background:#128c7e;transform:translateY(-1px)}
+.btn-hod{background:linear-gradient(135deg,#4c1d95,var(--hod));color:#fff}
+.btn-hod:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.35)}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:var(--r-xs)}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:5px}
+.btn-icon{width:30px;height:30px;padding:0;justify-content:center;border-radius:7px}
+
+/* ── FORMS ── */
+.fgrp{margin-bottom:14px}
+.flbl{display:block;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.finp,.fsel,.ftxt{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--txt);font-size:13px;font-family:var(--font);transition:border-color var(--tr),box-shadow var(--tr)}
+.finp:focus,.fsel:focus,.ftxt:focus{outline:none;border-color:var(--pri-light);box-shadow:0 0 0 3px rgba(37,99,168,.1)}
+.fsel{cursor:pointer}
+.ftxt{resize:vertical;min-height:80px}
+.fcols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:460px){.fcols2{grid-template-columns:1fr}}
+.filter-bar{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface2)}
+.filter-bar .fsel,.filter-bar .finp{width:auto;padding:7px 10px;font-size:12px}
+.filter-bar .finp{flex:1;min-width:140px;max-width:260px}
+.filter-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txt3);white-space:nowrap}
+
+/* ── SECTION HEADER ── */
+.sec-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.sec-title{font-weight:700;font-size:16px;color:var(--txt)}
+.sec-sub{font-size:12px;color:var(--txt2);margin-top:2px}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:4px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-btn{padding:7px 18px;border:none;background:none;border-radius:7px;font-size:13px;font-weight:600;color:var(--txt2);cursor:pointer;transition:all var(--tr);white-space:nowrap;font-family:var(--font)}
+.tab-btn.on{background:var(--surface);color:var(--pri);box-shadow:var(--shadow-sm)}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px}
+.modal-bg.show{display:flex}
+.modal-box{background:var(--surface);border-radius:var(--r);width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .22s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-head{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-weight:700;font-size:15px;color:var(--txt);display:flex;align-items:center;gap:7px}
+.modal-close{background:none;border:none;color:var(--txt3);font-size:17px;padding:4px;border-radius:5px;cursor:pointer;transition:all var(--tr)}
+.modal-close:hover{background:var(--surface2);color:var(--txt)}
+.modal-body{padding:18px 20px}
+.modal-foot{padding:14px 20px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── TOAST ── */
+#toastZone{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px;max-width:320px}
+@media(max-width:400px){#toastZone{left:16px;right:16px}}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 14px;box-shadow:var(--shadow-lg);display:flex;align-items:flex-start;gap:9px;font-size:13px;animation:slideUp .25s ease;color:var(--txt)}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast i{font-size:15px;margin-top:1px;flex-shrink:0}
+.toast.suc i{color:var(--suc)}.toast.err i{color:var(--dan)}.toast.inf i{color:var(--inf)}.toast.war i{color:var(--war)}
+
+/* ── LOADING ── */
+.global-loader{position:fixed;inset:0;z-index:999;background:rgba(255,255,255,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;backdrop-filter:blur(3px)}
+[data-theme="dark"] .global-loader{background:rgba(6,14,26,.88)}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--pri-light);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-txt{font-size:13px;color:var(--txt2);font-weight:500}
+.sk-line{height:14px;background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-block{border-radius:var(--r);overflow:hidden;background:var(--surface);border:1px solid var(--border)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--txt3)}
+.empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:.4}
+.empty-state p{font-size:13px}
+
+/* ── TIMELINE ── */
+.timeline{padding-left:24px;position:relative}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;padding-bottom:18px}
+.tl-item::before{content:'';position:absolute;left:-20px;top:4px;width:9px;height:9px;border-radius:50%;border:2px solid var(--surface);background:var(--txt3)}
+.tl-item.approved::before{background:var(--suc)}
+.tl-item.rejected::before{background:var(--dan)}
+.tl-item.pending::before{background:var(--war)}
+.tl-item.hodreview::before{background:var(--hod)}
+.tl-date{font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.tl-text{font-size:13px;color:var(--txt);margin-top:1px;font-weight:500}
+.tl-sub{font-size:12px;color:var(--txt2);margin-top:1px}
+
+/* ── CONTACT CARD ── */
+.contact-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px}
+.cc-rel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--txt3)}
+.cc-name{font-size:13px;font-weight:600;color:var(--txt);margin-top:2px}
+.cc-phone{font-size:15px;font-weight:700;color:var(--pri);font-family:var(--font-serif);margin:4px 0 10px}
+.cc-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:400px){.info-grid{grid-template-columns:1fr}}
+.info-item label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txt3)}
+.info-item p{font-size:13px;font-weight:600;color:var(--txt);margin-top:2px}
+
+/* misc */
+.divider{height:1px;background:var(--border);margin:14px 0}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:600;color:var(--txt2)}
+.text-suc{color:var(--suc)}.text-dan{color:var(--dan)}.text-war{color:var(--war)}.text-inf{color:var(--inf)}.text-acc{color:var(--acc)}.text-pri{color:var(--pri)}.text-hod{color:var(--hod)}
+.fw7{font-weight:700}.fw6{font-weight:600}
+.ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.progress-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width 1s ease}
+</style>
+</head>
+<body>
+
+<div id="toastZone"></div>
+<div class="global-loader" id="gLoader" style="display:none">
+  <div class="spinner"></div>
+  <div class="loader-txt" id="gLoaderTxt">Loading…</div>
+</div>
+
+<!-- ════ LOGIN SCREEN ════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="lc-badge">
+      <div class="lc-icon"><i class="fas fa-graduation-cap"></i></div>
+      <div>
+        <div class="lc-college">Velammal College of Engineering &amp; Technology</div>
+        <div class="lc-dept">Department of Information Technology</div>
+      </div>
+    </div>
+    <div class="lc-title">Leave &amp; OD Portal</div>
+    <div class="lc-sub">Sanction Management System — Sign in to continue</div>
+    <div class="form-grp">
+      <label class="form-lbl">Login ID</label>
+      <input type="text" id="lgId" class="form-inp" placeholder="Enter your Login ID" autocomplete="username">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Password</label>
+      <div class="inp-wrap">
+        <input type="password" id="lgPwd" class="form-inp" placeholder="Enter your password" autocomplete="current-password">
+        <button class="inp-eye" type="button" onclick="togglePwd()"><i class="fas fa-eye" id="eyeIcon"></i></button>
+      </div>
+    </div>
+    <div class="login-err" id="lgErr"></div>
+    <button class="btn-login" id="lgBtn" onclick="handleLogin()">
+      <i class="fas fa-sign-in-alt"></i> Sign In
+    </button>
+    <div class="login-footer">🔒 Secured portal for VCET-IT staff &amp; students only</div>
+  </div>
+</div>
+
+<!-- ════ APP WRAPPER ════ -->
+<div id="appWrap">
+  <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sb-logo">IT</div>
+      <div>
+        <div class="sb-brand-name">VCET Leave Portal</div>
+        <div class="sb-brand-sub">Dept. of Information Technology</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-foot">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sbAvatar">U</div>
+        <div style="min-width:0">
+          <div class="sb-uname" id="sbName">—</div>
+          <div class="sb-urole" id="sbRole">—</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="mainArea">
+    <div class="topbar">
+      <button class="tb-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div class="tb-title" id="tbTitle">Dashboard</div>
+      <div class="tb-actions">
+        <button class="tb-btn" onclick="refreshCurrentPage()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+        <div class="theme-pill" onclick="toggleTheme()">
+          <i class="fas fa-moon" id="themeIco"></i>
+          <span id="themeTxt">Dark</span>
+        </div>
+        <button class="tb-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+      </div>
+    </div>
+    <div class="page-body" id="pageBody"></div>
+  </div>
+</div>
+
+<!-- ════ MODALS ════ -->
+
+<!-- Apply Leave -->
+<div class="modal-bg" id="mLeave">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-head">
+      <div class="modal-title"><i class="fas fa-paper-plane text-acc"></i> Apply Leave / OD</div>
+      <button class="modal-close" onclick="closeModal('mLeave')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrp">
+        <label class="flbl">Leave Type *</label>
+        <select class="fsel" id="mLType" onchange="onLeaveTypeChange()">
+          <option value="">— Select —</option>
+          <option value="Leave">Leave</option>
+          <option value="OD">On Duty (OD)</option>
+          <option value="Medical">Medical Leave</option>
+          <option value="Emergency">Emergency Leave</option>
+        </select>
+      </div>
+      <div class="fcols2">
+        <div class="fgrp"><label class="flbl">From Date *</label><input type="date" class="finp" id="mLFrom" onchange="calcDays()"></div>
+        <div class="fgrp"><label class="flbl">To Date *</label><input type="date" class="finp" id="mLTo" onchange="calcDays()"></div>
+      </div>
+      <div id="daysDisplay" style="margin-bottom:12px;display:none">
+        <span class="chip"><i class="fas fa-calendar-day"></i> <span id="daysText">0 days</span></span>
+      </div>
+      <div class="fgrp">
+        <label class="flbl">Reason *</label>
+        <textarea class="ftxt" id="mLReason" placeholder="Provide detailed reason…"></textarea>
+      </div>
+      <div id="odExtra" style="display:none">
+        <div class="fgrp"><label class="flbl">Event / Purpose</label><input type="text" class="finp" id="mLODEvent" placeholder="e.g. Symposium, Hackathon…"></div>
+        <div class="fgrp"><label class="flbl">Venue / Institution</label><input type="text" class="finp" id="mLODVenue" placeholder="Institution / venue name"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mLeave')">Cancel</button>
+      <button class="btn btn-pri" id="submitLBtn" onclick="submitLeave()"><i class="fas fa-paper-plane"></i> Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal-bg" id="mReview">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title"><i class="fas fa-clipboard-check text-acc"></i> Review Request</div>
+      <button class="modal-close" onclick="closeModal('mReview')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="mReviewBody"></div>
+    <div class="modal-foot" id="mReviewFoot"></div>
+  </div>
+</div>
+
+<!-- Absent Entry -->
+<div class="modal-bg" id="mAbsent">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title"><i class="fas fa-user-slash text-dan"></i> Add Not-Informed Absent</div>
+      <button class="modal-close" onclick="closeModal('mAbsent')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrp"><label class="flbl">Select Student *</label><select class="fsel" id="mAbsStu"></select></div>
+      <div class="fgrp"><label class="flbl">Date *</label><input type="date" class="finp" id="mAbsDate"></div>
+      <div class="fgrp"><label class="flbl">Reason</label><textarea class="ftxt" id="mAbsReason" placeholder="Known reason (if any)…" style="min-height:60px"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--txt)">
+        <input type="checkbox" id="mAbsNotify" style="width:15px;height:15px;accent-color:var(--pri)">
+        Send WhatsApp notification to parent
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mAbsent')">Cancel</button>
+      <button class="btn btn-dan" onclick="submitAbsent()"><i class="fas fa-plus"></i> Add Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Modal -->
+<div class="modal-bg" id="mWA">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" style="color:#25d366"><i class="fab fa-whatsapp"></i> Send WhatsApp Alert</div>
+      <button class="modal-close" onclick="closeModal('mWA')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="mWABody"></div>
+    <div class="modal-foot" id="mWAFoot"></div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal-bg" id="mReport">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title"><i class="fas fa-file-pdf text-dan"></i> Generate PDF Report</div>
+      <button class="modal-close" onclick="closeModal('mReport')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrp">
+        <label class="flbl">Report Type</label>
+        <select class="fsel" id="rType" onchange="onReportTypeChange()">
+          <option value="all">All Requests</option>
+          <option value="daywise">Day Wise</option>
+          <option value="daterange">Date Range</option>
+          <option value="monthwise">Month Wise</option>
+          <option value="studentwise">Student Wise</option>
+          <option value="yearwise">Year Wise</option>
+        </select>
+      </div>
+      <div id="rDayField" class="fgrp" style="display:none"><label class="flbl">Date</label><input type="date" class="finp" id="rDay"></div>
+      <div id="rRangeField" style="display:none">
+        <div class="fcols2">
+          <div class="fgrp"><label class="flbl">From Date</label><input type="date" class="finp" id="rFrom"></div>
+          <div class="fgrp"><label class="flbl">To Date</label><input type="date" class="finp" id="rTo"></div>
+        </div>
+      </div>
+      <div id="rMonthField" class="fgrp" style="display:none"><label class="flbl">Month &amp; Year</label><input type="month" class="finp" id="rMonth"></div>
+      <div id="rStudentField" class="fgrp" style="display:none"><label class="flbl">Student Reg No / Name</label><input type="text" class="finp" id="rStudent" placeholder="Reg. No or Name"></div>
+      <div id="rYearField" style="display:none">
+        <div class="fcols2">
+          <div class="fgrp"><label class="flbl">Year</label><select class="fsel" id="rYear"><option value="">All</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+          <div class="fgrp"><label class="flbl">Section</label><select class="fsel" id="rSection"><option value="">All</option><option>A</option><option>B</option></select></div>
+        </div>
+      </div>
+      <div class="fgrp">
+        <label class="flbl">Status Filter</label>
+        <select class="fsel" id="rStatus">
+          <option value="">All Status</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Pending">Pending</option>
+          <option value="Forwarded">Forwarded</option>
+          <option value="HoD Review">HoD Review</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('mReport')">Cancel</button>
+      <button class="btn btn-acc" onclick="generateReport()"><i class="fas fa-file-download"></i> Generate &amp; Download</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════
+   CONFIGURATION
+══════════════════════════════════════════ */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwl18AHLPjCniAIvg2tI4MYFU9Rt-int5nIMOt7nNcP3gqv39BUSWM1h7t0boGN3Ju9cw/exec';
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let user           = null;
+let currentPage    = '';
+let charts         = {};
+let mentorStudents = [];
+
+/* ══════════════════════════════════════════
+   API — text/plain avoids CORS preflight
+══════════════════════════════════════════ */
+async function api(action, data = {}) {
+  if (!GAS_URL || GAS_URL.includes('YOUR_GOOGLE'))
+    throw new Error('GAS_URL not configured. Please set your Google Apps Script Web App URL.');
+  const res = await fetch(GAS_URL, {
+    method  : 'POST',
+    headers : { 'Content-Type': 'text/plain' },
+    body    : JSON.stringify({ action, data })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.msg || 'API error');
+  return json;
+}
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+function showG(txt='Loading…'){$('gLoader').style.display='flex';$('gLoaderTxt').textContent=txt}
+function hideG(){$('gLoader').style.display='none'}
+
+function toast(msg,type='inf'){
+  const icons={suc:'fa-check-circle',err:'fa-times-circle',inf:'fa-info-circle',war:'fa-exclamation-triangle'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<i class="fas ${icons[type]}"></i><span>${msg}</span>`;
+  $('toastZone').appendChild(el);
+  setTimeout(()=>el.remove(),4500);
+}
+
+function openModal(id){$(id).classList.add('show')}
+function closeModal(id){$(id).classList.remove('show')}
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg'))e.target.classList.remove('show')});
+
+function statusBadge(s){
+  const map={
+    Pending   :'badge-pending',
+    Approved  :'badge-approved',
+    Rejected  :'badge-rejected',
+    Forwarded :'badge-forwarded',
+    'HoD Review':'badge-hodreview'   // ← NEW
+  };
+  return `<span class="badge ${map[s]||'badge-pending'}">${s}</span>`;
+}
+function typeBadge(t){
+  const map={Leave:'badge-leave',OD:'badge-od',Medical:'badge-medical',Emergency:'badge-emergency'};
+  return `<span class="badge ${map[t]||'badge-leave'}">${t}</span>`;
+}
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}catch(e){return d}}
+function todayISO(){return new Date().toISOString().split('T')[0]}
+function getInitials(name){return(name||'').split(' ').slice(0,2).map(n=>n[0]||'').join('').toUpperCase()||'?'}
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={}}
+
+function chartDefaultOpts(){
+  const tc=getComputedStyle(document.documentElement).getPropertyValue('--txt2').trim()||'#4a6080';
+  const gc=getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#dde6f0';
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{family:'Plus Jakarta Sans',size:11},color:tc,boxWidth:12,padding:12}}},
+    scales:{x:{grid:{color:gc},ticks:{font:{family:'Plus Jakarta Sans',size:11},color:tc}},
+            y:{grid:{color:gc},ticks:{font:{family:'Plus Jakarta Sans',size:11},color:tc},beginAtZero:true}}};
+}
+function doughnutOpts(){
+  const tc=getComputedStyle(document.documentElement).getPropertyValue('--txt2').trim()||'#4a6080';
+  return{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Plus Jakarta Sans',size:11},color:tc,boxWidth:12,padding:10}}}};
+}
+function skeleton(rows=3){
+  return `<div style="padding:16px;display:flex;flex-direction:column;gap:10px">${Array(rows).fill(`<div class="sk-line" style="width:${60+Math.random()*35|0}%"></div>`).join('')}</div>`;
+}
+
+/* ══════════════════════════════════════════
+   THEME
+══════════════════════════════════════════ */
+function toggleTheme(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',isDark?'light':'dark');
+  localStorage.setItem('vcet_theme',isDark?'light':'dark');
+  updateThemeUI();destroyCharts();
+  setTimeout(()=>loadPage(currentPage),50);
+}
+function updateThemeUI(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  $('themeIco').className=isDark?'fas fa-sun':'fas fa-moon';
+  $('themeTxt').textContent=isDark?'Light':'Dark';
+}
+(function initTheme(){const saved=localStorage.getItem('vcet_theme');if(saved)document.documentElement.setAttribute('data-theme',saved);updateThemeUI()})();
+
+/* ══════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════ */
+function toggleSidebar(){
+  const sb=$('sidebar'),ov=$('sbOverlay');
+  if(window.innerWidth<=768){sb.classList.toggle('open');ov.classList.toggle('show')}
+}
+function closeSidebar(){$('sidebar').classList.remove('open');$('sbOverlay').classList.remove('show')}
+
+const NAV_ITEMS = {
+  Student:[
+    {id:'dash',   icon:'fa-home',              label:'Dashboard'},
+    {id:'myReqs', icon:'fa-list-check',         label:'My Requests'},
+    {id:'history',icon:'fa-clock-rotate-left',  label:'Leave History'},
+    {id:'profile',icon:'fa-user-circle',         label:'My Profile'}
+  ],
+  Mentor:[
+    {id:'dash',    icon:'fa-home',            label:'Dashboard'},
+    {id:'pending', icon:'fa-inbox',           label:'Pending Requests'},
+    {id:'allReqs', icon:'fa-list-alt',        label:'All Requests'},
+    {id:'students',icon:'fa-users',           label:'My Students'},
+    {id:'absent',  icon:'fa-user-slash',      label:'Absent Entry'},
+    {id:'waLogs',  icon:'fa-comments',        label:'WhatsApp Logs'},
+    {id:'profile', icon:'fa-user-circle',     label:'My Profile'}
+  ],
+  Chairperson:[
+    {id:'dash',      icon:'fa-home',            label:'Dashboard'},
+    {id:'forwarded', icon:'fa-clipboard-check', label:'Approve Requests'},
+    {id:'chairAll',  icon:'fa-list-alt',        label:'All Requests'},
+    {id:'reports',   icon:'fa-chart-bar',       label:'Reports'},
+    {id:'profile',   icon:'fa-user-circle',     label:'My Profile'}
+  ],
+  HoD:[
+    {id:'dash',      icon:'fa-home',            label:'Dashboard'},
+    {id:'hodApprove',icon:'fa-stamp',           label:'Final Approval'},     // ← NEW
+    {id:'hodOver',   icon:'fa-eye',             label:'Dept. Overview'},
+    {id:'hodYear',   icon:'fa-chart-bar',       label:'Year-wise Analysis'},
+    {id:'hodStud',   icon:'fa-user-graduate',   label:'Student Reports'},
+    {id:'hodAll',    icon:'fa-list-alt',        label:'All Requests'},
+    {id:'reports',   icon:'fa-file-pdf',        label:'Generate Reports'},
+    {id:'profile',   icon:'fa-user-circle',     label:'My Profile'}
+  ]
+};
+
+function buildSidebar(pendingCount=0){
+  const items=NAV_ITEMS[user.role]||[];
+  $('sbAvatar').textContent=getInitials(user.name);
+  $('sbName').textContent=user.name;
+  $('sbRole').textContent=user.role;
+
+  let html=`<div class="nav-sec-label">${user.role} Portal</div>`;
+  items.forEach(item=>{
+    // Show badge on pending/forwarded (Mentor/Chair) and hodApprove (HoD)
+    const showBadge=['pending','forwarded','hodApprove'].includes(item.id)&&pendingCount>0;
+    const badge=showBadge?`<span class="nav-badge">${pendingCount}</span>`:'';
+    html+=`<button class="nav-link" id="nl_${item.id}" onclick="nav('${item.id}')">
+      <i class="fas ${item.icon}"></i><span>${item.label}</span>${badge}
+    </button>`;
+  });
+  $('sidebarNav').innerHTML=html;
+}
+
+function nav(pageId){
+  currentPage=pageId;
+  document.querySelectorAll('.nav-link').forEach(el=>el.classList.remove('active'));
+  const el=$('nl_'+pageId);
+  if(el)el.classList.add('active');
+  const titles={
+    dash:'Dashboard',myReqs:'My Requests',history:'Leave History',profile:'My Profile',
+    pending:'Pending Requests',allReqs:'All Requests',students:'My Students',
+    absent:'Absent Management',waLogs:'WhatsApp Logs',
+    forwarded:'Approve Requests',chairAll:'All Requests',reports:'Reports & Analytics',
+    hodApprove:'Final Approval — HoD',   // ← NEW
+    hodOver:'Department Overview',hodYear:'Year-wise Analysis',hodStud:'Student Reports',hodAll:'All Requests'
+  };
+  $('tbTitle').textContent=titles[pageId]||pageId;
+  closeSidebar();
+  loadPage(pageId);
+}
+
+function refreshCurrentPage(){if(currentPage)loadPage(currentPage)}
+
+/* ══════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════ */
+function togglePwd(){
+  const inp=$('lgPwd');
+  inp.type=inp.type==='password'?'text':'password';
+  $('eyeIcon').className=inp.type==='password'?'fas fa-eye':'fas fa-eye-slash';
+}
+
+async function handleLogin(){
+  const loginId=$('lgId').value.trim(),password=$('lgPwd').value.trim();
+  const errEl=$('lgErr');
+  errEl.style.display='none';
+  if(!loginId||!password){errEl.textContent='Please enter Login ID and Password.';errEl.style.display='block';return}
+  if(!GAS_URL||GAS_URL.includes('YOUR_GOOGLE')){
+    errEl.textContent='❌ GAS_URL not configured!';errEl.style.display='block';return;
+  }
+  const btn=$('lgBtn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Signing in…';
+  try{
+    const res=await api('login',{loginId,password});
+    user=res.user;
+    initApp();
+  }catch(e){
+    errEl.textContent=e.message||'Login failed.';errEl.style.display='block';
+  }finally{
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-sign-in-alt"></i> Sign In';
+  }
+}
+$('lgPwd').addEventListener('keydown',e=>{if(e.key==='Enter')handleLogin()});
+$('lgId').addEventListener('keydown',e=>{if(e.key==='Enter')$('lgPwd').focus()});
+
+function initApp(){
+  $('loginScreen').style.display='none';$('appWrap').style.display='block';
+  buildSidebar();nav('dash');
+}
+function doLogout(){
+  if(!confirm('Sign out from VCET Leave Portal?'))return;
+  user=null;mentorStudents=[];destroyCharts();
+  $('loginScreen').style.display='flex';$('appWrap').style.display='none';
+  $('lgId').value='';$('lgPwd').value='';
+  toast('Signed out successfully','inf');
+}
+
+/* ══════════════════════════════════════════
+   PAGE ROUTER
+══════════════════════════════════════════ */
+function loadPage(id){
+  destroyCharts();
+  const pb=$('pageBody');
+  pb.innerHTML=`<div class="sk-block mb-14">${skeleton()}</div><div class="sk-block">${skeleton(5)}</div>`;
+  const pages={
+    // Student
+    dash     :()=>user.role==='Student'?renderStuDash():user.role==='Mentor'?renderMenDash():user.role==='Chairperson'?renderChairDash():renderHodDash(),
+    myReqs   :renderMyReqs,
+    history  :renderHistory,
+    profile  :renderProfile,
+    // Mentor
+    pending  :renderPending,
+    allReqs  :renderMentorAll,
+    students :renderStudents,
+    absent   :renderAbsent,
+    waLogs   :renderWALogs,
+    // Chairperson
+    forwarded:renderForwarded,
+    chairAll :renderChairAll,
+    reports  :renderReports,
+    // HoD
+    hodApprove:renderHodApprove,   // ← NEW
+    hodOver  :renderHodOver,
+    hodYear  :renderHodYear,
+    hodStud  :renderHodStud,
+    hodAll   :renderHodAll
+  };
+  const fn=pages[id];
+  if(fn)fn();
+  else pb.innerHTML='<div class="empty-state"><i class="fas fa-question-circle"></i><p>Page not found</p></div>';
+}
+
+/* ══════════════════════════════════════════
+   STUDENT PAGES
+══════════════════════════════════════════ */
+async function renderStuDash(){
+  const pb=$('pageBody');
+  try{
+    const[profRes,reqRes]=await Promise.all([
+      api('student.getProfile',{regNo:user.loginId}),
+      api('student.getMyRequests',{regNo:user.loginId})
+    ]);
+    const reqs=reqRes.data||[];
+    const approved=reqs.filter(r=>r.FinalStatus==='Approved').length;
+    const pending=reqs.filter(r=>['Pending','Forwarded','HoD Review'].includes(r.FinalStatus)).length;
+    const rejected=reqs.filter(r=>r.FinalStatus==='Rejected').length;
+    const days=reqs.filter(r=>r.FinalStatus==='Approved').reduce((s,r)=>s+(+r.TotalDays||0),0);
+
+    pb.innerHTML=`
+      <div class="welcome">
+        <div class="welcome-z">
+          <div class="welcome-title">Hello, ${user.name.split(' ')[0]}! 👋</div>
+          <div class="welcome-sub">Track your leave and OD requests in one place.</div>
+          <div class="welcome-date"><i class="fas fa-calendar-day"></i> ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div class="welcome-actions">
+            <button class="btn btn-acc" onclick="openApplyModal()"><i class="fas fa-plus-circle"></i> Apply Leave / OD</button>
+            <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25)" onclick="nav('myReqs')"><i class="fas fa-list"></i> View All</button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid col4 mb-20">
+        ${sCard('Total Requests',reqs.length,'fa-file-alt','sc-blue')}
+        ${sCard('Approved',approved,'fa-check-circle','sc-green')}
+        ${sCard('Pending / In Review',pending,'fa-clock','sc-orange')}
+        ${sCard('Days Taken',days,'fa-calendar-check','sc-cyan')}
+      </div>
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i> Request Summary</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="stuBarChart"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-history"></i> Recent</div></div>
+          <div class="card-body" style="padding-top:10px">
+            ${reqs.length===0?`<div class="empty-state"><i class="fas fa-inbox"></i><p>No requests yet</p></div>`
+            :reqs.slice(-5).reverse().map(r=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+                <div>
+                  <div style="font-size:13px;font-weight:600">${typeBadge(r.LeaveType)} ${r.FromDate}</div>
+                  <div style="font-size:11px;color:var(--txt2);margin-top:2px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Reason}</div>
+                </div>
+                ${statusBadge(r.FinalStatus)}
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    const byType=['Leave','OD','Medical','Emergency'];
+    charts.stuBar=new Chart($('stuBarChart'),{type:'bar',data:{labels:byType,datasets:[
+      {label:'Approved',data:byType.map(t=>reqs.filter(r=>r.LeaveType===t&&r.FinalStatus==='Approved').length),backgroundColor:'rgba(5,150,105,.7)',borderRadius:6},
+      {label:'In Review',data:byType.map(t=>reqs.filter(r=>r.LeaveType===t&&['Pending','Forwarded','HoD Review'].includes(r.FinalStatus)).length),backgroundColor:'rgba(217,119,6,.65)',borderRadius:6},
+      {label:'Rejected',data:byType.map(t=>reqs.filter(r=>r.LeaveType===t&&r.FinalStatus==='Rejected').length),backgroundColor:'rgba(220,38,38,.65)',borderRadius:6}
+    ]},options:chartDefaultOpts()});
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderMyReqs(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('student.getMyRequests',{regNo:user.loginId});
+    const reqs=res.data||[];
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">My Leave / OD Requests</div><div class="sec-sub">${reqs.length} total requests</div></div>
+        <button class="btn btn-acc" onclick="openApplyModal()"><i class="fas fa-plus"></i> New Request</button>
+      </div>
+      <div class="card">
+        <div class="filter-bar">
+          <span class="filter-lbl">Status:</span>
+          <select class="fsel" onchange="filterTbl(this.value,'stuReqTbl','FinalStatus')">
+            <option value="">All</option><option>Pending</option><option>Forwarded</option><option>HoD Review</option><option>Approved</option><option>Rejected</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search…" oninput="searchTbl(this.value,'stuReqTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="stuReqTbl">
+            <thead><tr><th>ID</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Applied</th><th>Mentor</th><th>Chair</th><th>HoD</th><th>Status</th></tr></thead>
+            <tbody>
+              ${reqs.length===0?`<tr><td colspan="11"><div class="empty-state"><i class="fas fa-inbox"></i><p>No requests found. Apply your first leave!</p></div></td></tr>`
+              :reqs.map(r=>`<tr data-search="${r.RequestID} ${r.LeaveType} ${r.Reason} ${r.FinalStatus}">
+                <td><span class="fw7 text-pri">${r.RequestID}</span></td>
+                <td>${typeBadge(r.LeaveType)}</td>
+                <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+                <td><span class="chip">${r.TotalDays}d</span></td>
+                <td><span class="ellipsis" style="display:block" title="${r.Reason}">${r.Reason}</span></td>
+                <td>${fmtDate(r.ApplyDate)}</td>
+                <td>${statusBadge(r.MentorStatus)}</td>
+                <td>${statusBadge(r.ChairpersonStatus)}</td>
+                <td>${statusBadge(r.HoDStatus||'Pending')}</td>
+                <td>${statusBadge(r.FinalStatus)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderHistory(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('student.getMyRequests',{regNo:user.loginId});
+    const approved=res.data.filter(r=>r.FinalStatus==='Approved');
+    const totalDays=approved.reduce((s,r)=>s+(+r.TotalDays||0),0);
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">Leave History</div><div class="sec-sub">All approved leaves</div></div>
+        <span class="chip"><i class="fas fa-calendar-check text-suc"></i> ${totalDays} approved days</span>
+      </div>
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-history"></i> Approved Timeline</div></div>
+          <div class="card-body">
+            ${approved.length===0?`<div class="empty-state"><i class="fas fa-check-double text-suc"></i><p>No approved leaves yet</p></div>`
+            :`<div class="timeline">${approved.map(r=>`
+              <div class="tl-item approved">
+                <div class="tl-date">${fmtDate(r.ApplyDate)}</div>
+                <div class="tl-text">${r.LeaveType} — ${fmtDate(r.FromDate)} to ${fmtDate(r.ToDate)} <span class="chip" style="font-size:10px">${r.TotalDays}d</span></div>
+                <div class="tl-sub">${r.Reason}</div>
+              </div>`).join('')}</div>`}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Leave Breakdown</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="histDoughnut"></canvas></div></div>
+        </div>
+      </div>`;
+    const labels=['Leave','OD','Medical','Emergency'];
+    const vals=labels.map(t=>approved.filter(r=>r.LeaveType===t).reduce((s,r)=>s+(+r.TotalDays||0),0));
+    charts.hist=new Chart($('histDoughnut'),{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:['rgba(15,39,68,.8)','rgba(224,92,26,.8)','rgba(5,150,105,.8)','rgba(217,119,6,.8)'],borderWidth:0,hoverOffset:5}]},options:doughnutOpts()});
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+/* ══════════════════════════════════════════
+   MENTOR PAGES
+══════════════════════════════════════════ */
+async function renderMenDash(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('mentor.getDashboard',{mentorId:user.loginId});
+    const d=res.data;
+    buildSidebar(d.pendingCount);
+    pb.innerHTML=`
+      <div class="welcome">
+        <div class="welcome-z">
+          <div class="welcome-title">Welcome, ${user.name}! 🎓</div>
+          <div class="welcome-sub">${d.pendingCount} pending request(s) need your review.</div>
+          <div class="welcome-date"><i class="fas fa-calendar-day"></i> ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div class="welcome-actions">
+            <button class="btn btn-pri" onclick="nav('pending')"><i class="fas fa-inbox"></i> Review Pending</button>
+            <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25)" onclick="openAbsentModal()"><i class="fas fa-user-slash"></i> Add Absent</button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid col4 mb-20">
+        ${sCard('My Students',d.totalStudents,'fa-users','sc-blue')}
+        ${sCard('Pending Review',d.pendingCount,'fa-inbox','sc-orange')}
+        ${sCard('Approved',d.approvedCount,'fa-check-circle','sc-green')}
+        ${sCard('Rejected',d.rejectedCount,'fa-times-circle','sc-red')}
+      </div>
+      <div class="card mb-14">
+        <div class="card-head"><div class="card-title"><i class="fas fa-clock"></i> Recent Pending Actions</div></div>
+        <div class="card-body" style="padding-top:10px">
+          ${(d.recentRequests||[]).filter(r=>r.MentorStatus==='Pending').slice(0,5).map(r=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-weight:600;font-size:13px">${r.StudentName} <span class="chip" style="font-size:10px">${r.RegNo}</span></div>
+                <div style="font-size:11px;color:var(--txt2)">${r.LeaveType} | ${fmtDate(r.FromDate)} → ${fmtDate(r.ToDate)} | ${r.TotalDays}d</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-suc btn-sm" onclick="quickAct('${r.RequestID}','Approved','mentor')"><i class="fas fa-check"></i></button>
+                <button class="btn btn-dan btn-sm" onclick="quickAct('${r.RequestID}','Rejected','mentor')"><i class="fas fa-times"></i></button>
+                <button class="btn btn-ghost btn-sm" onclick="openReview('${r.RequestID}','mentor')"><i class="fas fa-eye"></i></button>
+              </div>
+            </div>`).join('')||`<div class="empty-state" style="padding:20px"><i class="fas fa-check-double text-suc"></i><p>All clear! No pending requests.</p></div>`}
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderPending(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('mentor.getPending',{mentorId:user.loginId});
+    const reqs=res.data||[];
+    buildSidebar(reqs.length);
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">Pending Requests</div><div class="sec-sub">${reqs.length} awaiting your review</div></div>
+      </div>
+      <div class="card">
+        <div class="filter-bar">
+          <select class="fsel" onchange="filterTbl(this.value,'penTbl','LeaveType')">
+            <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option><option>Emergency</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search student…" oninput="searchTbl(this.value,'penTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="penTbl">
+            <thead><tr><th>ID</th><th>Student</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Applied</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${reqs.length===0?`<tr><td colspan="9"><div class="empty-state"><i class="fas fa-check-double text-suc"></i><p>All requests reviewed!</p></div></td></tr>`
+              :reqs.map(r=>`<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo} ${r.LeaveType}">
+                <td class="fw7 text-pri">${r.RequestID}</td>
+                <td><div class="fw6">${r.StudentName}</div><div style="font-size:11px;color:var(--txt2)">${r.RegNo}</div></td>
+                <td>${typeBadge(r.LeaveType)}</td>
+                <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+                <td><span class="chip">${r.TotalDays}d</span></td>
+                <td><span class="ellipsis" title="${r.Reason}">${r.Reason}</span></td>
+                <td>${fmtDate(r.ApplyDate)}</td>
+                <td><div style="display:flex;gap:5px">
+                  <button class="btn btn-suc btn-xs" onclick="quickAct('${r.RequestID}','Approved','mentor')"><i class="fas fa-check"></i></button>
+                  <button class="btn btn-dan btn-xs" onclick="quickAct('${r.RequestID}','Rejected','mentor')"><i class="fas fa-times"></i></button>
+                  <button class="btn btn-ghost btn-xs" onclick="openReview('${r.RequestID}','mentor')"><i class="fas fa-eye"></i></button>
+                </div></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderMentorAll(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('mentor.getAllRequests',{mentorId:user.loginId});
+    renderRequestsTable(pb,res.data||[],'allMenTbl',true);
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderStudents(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('mentor.getStudents',{mentorId:user.loginId});
+    mentorStudents=res.data||[];
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">My Students</div><div class="sec-sub">${mentorStudents.length} allotted students</div></div>
+      </div>
+      <div class="card">
+        <div class="filter-bar">
+          <input type="text" class="finp" style="max-width:280px;flex:1" placeholder="Search student, Reg. No…" oninput="searchTbl(this.value,'stuTbl')">
+          <select class="fsel" onchange="filterTbl(this.value,'stuTbl','Section')">
+            <option value="">All Sections</option><option value="A">Section A</option><option value="B">Section B</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="stuTbl">
+            <thead><tr><th>Reg. No</th><th>Name</th><th>Year/Sec</th><th>Father</th><th>Father Mobile</th><th>Mother</th><th>Mother Mobile</th><th>Student Mobile</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${mentorStudents.map(s=>`<tr data-search="${s.RegNo} ${s.StudentName} ${s.Section}">
+                <td class="fw7 text-pri">${s.RegNo}</td>
+                <td class="fw6">${s.StudentName}</td>
+                <td><span class="chip">${s.Year}-${s.Section}</span></td>
+                <td>${s.FatherName}</td>
+                <td><a href="tel:${s.FatherMobile}" style="color:var(--pri);font-weight:600"><i class="fas fa-phone fa-xs"></i> ${s.FatherMobile}</a></td>
+                <td>${s.MotherName}</td>
+                <td><a href="tel:${s.MotherMobile}" style="color:var(--pri);font-weight:600"><i class="fas fa-phone fa-xs"></i> ${s.MotherMobile}</a></td>
+                <td>${s.StudentMobile}</td>
+                <td><div style="display:flex;gap:5px">
+                  <button class="btn btn-wa btn-xs" onclick="openWA('${s.RegNo}')"><i class="fab fa-whatsapp"></i></button>
+                  <a href="tel:${s.FatherMobile}" class="btn btn-pri btn-xs"><i class="fas fa-phone"></i></a>
+                </div></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderAbsent(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('mentor.getAbsents',{mentorId:user.loginId});
+    const rows=res.data||[];
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">Absent Management</div></div>
+        <button class="btn btn-dan" onclick="openAbsentModal()"><i class="fas fa-plus"></i> Add Absent Entry</button>
+      </div>
+      <div class="stats-grid col3 mb-14">
+        ${sCard('Total Entries',rows.length,'fa-calendar-times','sc-red')}
+        ${sCard('Parents Notified',rows.filter(r=>r.ParentNotified==='Yes').length,'fa-bell','sc-green')}
+        ${sCard('Today',rows.filter(r=>r.Date===todayISO()).length,'fa-user-slash','sc-orange')}
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Entry ID</th><th>Date</th><th>Reg. No</th><th>Student</th><th>Year/Sec</th><th>Reason</th><th>Parent Notified</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${rows.length===0?`<tr><td colspan="8"><div class="empty-state"><i class="fas fa-calendar-check text-suc"></i><p>No absent entries found</p></div></td></tr>`
+              :rows.map(r=>`<tr>
+                <td class="fw7 text-dan">${r.EntryID}</td>
+                <td>${fmtDate(r.Date)}</td>
+                <td>${r.RegNo}</td>
+                <td class="fw6">${r.StudentName}</td>
+                <td><span class="chip">${r.Year||'—'}-${r.Section||'—'}</span></td>
+                <td>${r.Reason}</td>
+                <td><span class="badge ${r.ParentNotified==='Yes'?'badge-approved':'badge-rejected'}">${r.ParentNotified}</span></td>
+                <td><button class="btn btn-wa btn-xs" onclick="openWA('${r.RegNo}')"><i class="fab fa-whatsapp"></i> Alert</button></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderWALogs(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('mentor.getWALogs',{mentorId:user.loginId});
+    const rows=res.data||[];
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">WhatsApp Notification Logs</div></div>
+        <span class="chip"><i class="fab fa-whatsapp" style="color:#25d366"></i> ${rows.length} messages</span>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Log ID</th><th>Date &amp; Time</th><th>Reg. No</th><th>Student</th><th>Parent Name</th><th>Number</th><th>Message</th><th>Status</th></tr></thead>
+            <tbody>
+              ${rows.length===0?`<tr><td colspan="8"><div class="empty-state"><i class="fab fa-whatsapp" style="color:#25d366"></i><p>No WhatsApp logs yet</p></div></td></tr>`
+              :rows.map(r=>`<tr>
+                <td class="fw7" style="color:#25d366">${r.LogID}</td>
+                <td style="font-size:12px">${r.DateTime}</td>
+                <td>${r.RegNo}</td>
+                <td>${r.StudentName}</td>
+                <td>${r.ParentName}</td>
+                <td><a href="tel:${r.ParentNumber}" style="color:var(--pri);font-weight:600">${r.ParentNumber}</a></td>
+                <td style="font-size:12px;max-width:200px;white-space:pre-wrap">${r.Message}</td>
+                <td><span class="badge ${r.Status==='Sent'?'badge-approved':'badge-rejected'}">${r.Status}</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+/* ══════════════════════════════════════════
+   CHAIRPERSON PAGES
+══════════════════════════════════════════ */
+async function renderChairDash(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('chair.getDashboard');
+    const d=res.data;
+    buildSidebar(d.awaitingApproval);
+    pb.innerHTML=`
+      <div class="welcome">
+        <div class="welcome-z">
+          <div class="welcome-title">Chairperson Dashboard 📋</div>
+          <div class="welcome-sub">${d.awaitingApproval} request(s) awaiting your approval.</div>
+          <div class="welcome-date"><i class="fas fa-calendar-day"></i> ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div class="welcome-actions">
+            <button class="btn btn-pri" onclick="nav('forwarded')"><i class="fas fa-clipboard-check"></i> Approve Requests</button>
+            <button class="btn btn-acc" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Generate Report</button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid col4 mb-20">
+        ${sCard('Total Requests',d.totalRequests,'fa-file-alt','sc-blue')}
+        ${sCard('Awaiting Approval',d.awaitingApproval,'fa-inbox','sc-orange')}
+        ${sCard('Sent to HoD',d.approved,'fa-arrow-up','sc-purple')}
+        ${sCard('Rejected',d.rejected,'fa-times-circle','sc-red')}
+      </div>
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i> Leave Type Distribution</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="chairBar"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Status Overview</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="chairDough"></canvas></div></div>
+        </div>
+      </div>`;
+    charts.chairBar=new Chart($('chairBar'),{type:'bar',data:{
+      labels:['Leave','OD','Medical','Emergency'],
+      datasets:[{label:'Count',data:[d.totalLeave,d.totalOD,d.totalMedical,d.totalRequests-d.totalLeave-d.totalOD-d.totalMedical],
+        backgroundColor:['rgba(15,39,68,.75)','rgba(224,92,26,.75)','rgba(5,150,105,.75)','rgba(217,119,6,.75)'],borderRadius:6}]
+    },options:chartDefaultOpts()});
+    charts.chairDough=new Chart($('chairDough'),{type:'doughnut',data:{
+      labels:['Sent to HoD','Awaiting','Rejected'],
+      datasets:[{data:[d.approved,d.awaitingApproval,d.rejected],
+        backgroundColor:['rgba(124,58,237,.8)','rgba(217,119,6,.8)','rgba(220,38,38,.8)'],borderWidth:0,hoverOffset:5}]
+    },options:doughnutOpts()});
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderForwarded(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('chair.getForwarded');
+    const reqs=res.data||[];
+    buildSidebar(reqs.length);
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">Approve Requests</div><div class="sec-sub">${reqs.length} mentor-approved, awaiting your decision</div></div>
+      </div>
+      <div class="card">
+        <div class="filter-bar">
+          <select class="fsel" onchange="filterTbl(this.value,'fwdTbl','LeaveType')">
+            <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search student…" oninput="searchTbl(this.value,'fwdTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="fwdTbl">
+            <thead><tr><th>ID</th><th>Student</th><th>Year/Sec</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Mentor Remark</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${reqs.length===0?`<tr><td colspan="10"><div class="empty-state"><i class="fas fa-check-double text-suc"></i><p>All requests processed!</p></div></td></tr>`
+              :reqs.map(r=>`<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo}">
+                <td class="fw7 text-pri">${r.RequestID}</td>
+                <td><div class="fw6">${r.StudentName}</div><div style="font-size:11px;color:var(--txt2)">${r.RegNo}</div></td>
+                <td><span class="chip">${r.Year||'—'}-${r.Section||'—'}</span></td>
+                <td>${typeBadge(r.LeaveType)}</td>
+                <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+                <td><span class="chip">${r.TotalDays}d</span></td>
+                <td><span class="ellipsis" title="${r.Reason}">${r.Reason}</span></td>
+                <td style="font-size:12px;color:var(--txt2)">${r.MentorRemarks||'—'}</td>
+                <td><div style="display:flex;gap:5px">
+                  <button class="btn btn-suc btn-xs" onclick="quickAct('${r.RequestID}','Approved','chair')"><i class="fas fa-check"></i></button>
+                  <button class="btn btn-dan btn-xs" onclick="quickAct('${r.RequestID}','Rejected','chair')"><i class="fas fa-times"></i></button>
+                  <button class="btn btn-ghost btn-xs" onclick="openReview('${r.RequestID}','chair')"><i class="fas fa-eye"></i></button>
+                </div></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderChairAll(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('chair.getAllRequests');
+    renderRequestsTable(pb,res.data||[],'chairAllTbl',true);
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderReports(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('chair.getAllRequests');
+    const all=res.data||[];
+    const approved=all.filter(r=>r.FinalStatus==='Approved').length;
+    const leave=all.filter(r=>r.LeaveType==='Leave').length;
+    const od=all.filter(r=>r.LeaveType==='OD').length;
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div><div class="sec-title">Reports &amp; Analytics</div></div>
+        <button class="btn btn-acc" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Generate PDF</button>
+      </div>
+      <div class="stats-grid col4 mb-20">
+        ${sCard('Total',all.length,'fa-file-alt','sc-blue')}
+        ${sCard('Leave',leave,'fa-calendar-minus','sc-orange')}
+        ${sCard('OD',od,'fa-briefcase','sc-cyan')}
+        ${sCard('Approved',approved,'fa-check-circle','sc-green')}
+      </div>
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i> Monthly Trend</div></div>
+          <div class="card-body"><div class="chart-wrap-tall"><canvas id="crTrend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Type Split</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="crPie"></canvas></div></div>
+        </div>
+      </div>`;
+    const byMonth={};
+    all.forEach(r=>{const m=r.ApplyDate?r.ApplyDate.slice(0,7):'Unknown';byMonth[m]=(byMonth[m]||[]);byMonth[m].push(r)});
+    const months=Object.keys(byMonth).sort().slice(-6);
+    const labels=months.map(m=>{try{return new Date(m+'-01').toLocaleDateString('en-IN',{month:'short',year:'2-digit'})}catch(e){return m}});
+    charts.crTrend=new Chart($('crTrend'),{type:'line',data:{labels,datasets:[
+      {label:'Leave',data:months.map(m=>(byMonth[m]||[]).filter(r=>r.LeaveType==='Leave').length),borderColor:'rgba(15,39,68,.8)',backgroundColor:'rgba(15,39,68,.07)',tension:.4,fill:true,pointRadius:4},
+      {label:'OD',data:months.map(m=>(byMonth[m]||[]).filter(r=>r.LeaveType==='OD').length),borderColor:'rgba(224,92,26,.8)',backgroundColor:'rgba(224,92,26,.07)',tension:.4,fill:true,pointRadius:4},
+    ]},options:chartDefaultOpts()});
+    charts.crPie=new Chart($('crPie'),{type:'pie',data:{
+      labels:['Leave','OD','Medical','Emergency'],
+      datasets:[{data:[leave,od,all.filter(r=>r.LeaveType==='Medical').length,all.filter(r=>r.LeaveType==='Emergency').length],backgroundColor:['rgba(15,39,68,.8)','rgba(224,92,26,.8)','rgba(5,150,105,.8)','rgba(217,119,6,.8)'],borderWidth:0,hoverOffset:5}]
+    },options:doughnutOpts()});
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+/* ══════════════════════════════════════════
+   HOD PAGES
+══════════════════════════════════════════ */
+
+// ── NEW: HoD Final Approval Queue ─────────────────────────────
+async function renderHodApprove(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('hod.getPending');
+    const reqs=res.data||[];
+    buildSidebar(reqs.length);
+    pb.innerHTML=`
+      <div class="sec-head">
+        <div>
+          <div class="sec-title"><i class="fas fa-stamp text-hod"></i> Final Approval — HoD</div>
+          <div class="sec-sub">${reqs.length} request(s) approved by Chairperson, awaiting your final decision</div>
+        </div>
+      </div>
+      ${reqs.length>0?`
+      <div class="hod-alert mb-14">
+        <div class="hod-alert-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="hod-alert-text">
+          <div class="hod-alert-title">${reqs.length} Request(s) Require Your Attention</div>
+          <div class="hod-alert-sub">These have been approved by both Mentor and Chairperson. Your approval is the final step.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-suc btn-sm" onclick="approveAllHod()"><i class="fas fa-check-double"></i> Approve All</button>
+        </div>
+      </div>`:''}
+      <div class="card">
+        <div class="filter-bar">
+          <span class="filter-lbl">Filter:</span>
+          <select class="fsel" onchange="filterTbl(this.value,'hodApprTbl','LeaveType')">
+            <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option><option>Emergency</option>
+          </select>
+          <select class="fsel" onchange="filterTbl(this.value,'hodApprTbl','Year')">
+            <option value="">All Years</option><option value="I">Year I</option><option value="II">Year II</option><option value="III">Year III</option><option value="IV">Year IV</option>
+          </select>
+          <input type="text" class="finp" placeholder="Search student / Reg. No…" oninput="searchTbl(this.value,'hodApprTbl')">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="hodApprTbl">
+            <thead><tr>
+              <th>ID</th><th>Student</th><th>Year/Sec</th><th>Type</th>
+              <th>From</th><th>To</th><th>Days</th><th>Reason</th>
+              <th>Mentor Remark</th><th>Chair Remark</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              ${reqs.length===0
+              ?`<tr><td colspan="11"><div class="empty-state"><i class="fas fa-check-double text-suc"></i><p>All requests processed! Nothing pending.</p></div></td></tr>`
+              :reqs.map(r=>`<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo} ${r.Year} ${r.LeaveType}">
+                <td class="fw7 text-hod">${r.RequestID}</td>
+                <td>
+                  <div class="fw6">${r.StudentName}</div>
+                  <div style="font-size:11px;color:var(--txt2)">${r.RegNo}</div>
+                </td>
+                <td><span class="chip">${r.Year||'—'}-${r.Section||'—'}</span></td>
+                <td>${typeBadge(r.LeaveType)}</td>
+                <td>${fmtDate(r.FromDate)}</td>
+                <td>${fmtDate(r.ToDate)}</td>
+                <td><span class="chip">${r.TotalDays}d</span></td>
+                <td><span class="ellipsis" title="${r.Reason}">${r.Reason}</span></td>
+                <td style="font-size:12px;color:var(--txt2)">${r.MentorRemarks||'—'}</td>
+                <td style="font-size:12px;color:var(--txt2)">${r.ChairpersonRemarks||'—'}</td>
+                <td>
+                  <div style="display:flex;gap:5px">
+                    <button class="btn btn-suc btn-xs" onclick="quickAct('${r.RequestID}','Approved','hod')" title="Approve"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-dan btn-xs" onclick="quickAct('${r.RequestID}','Rejected','hod')" title="Reject"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-ghost btn-xs" onclick="openReview('${r.RequestID}','hod')" title="View Details"><i class="fas fa-eye"></i></button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    window._hodPendingData=reqs;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function approveAllHod(){
+  const reqs=window._hodPendingData||[];
+  if(!reqs.length){toast('No pending requests','war');return}
+  if(!confirm(`Approve all ${reqs.length} pending request(s)? This is final and cannot be undone.`))return;
+  showG('Approving all requests…');
+  try{
+    for(const r of reqs){
+      await api('hod.actOnRequest',{requestId:r.RequestID,action:'Approved',remarks:'Batch approved by HoD'});
+    }
+    toast(`${reqs.length} request(s) approved successfully!`,'suc');
+    renderHodApprove();
+  }catch(e){toast('Error: '+e.message,'err')}
+  finally{hideG()}
+}
+
+async function renderHodDash(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('hod.getDashboard');
+    const d=res.data;
+    // Pass hodPending count to sidebar badge on hodApprove nav item
+    buildSidebar(d.hodPending||0);
+    const mt=d.monthTrend||{labels:[],leave:[],od:[],medical:[]};
+    pb.innerHTML=`
+      <div class="welcome">
+        <div class="welcome-z">
+          <div class="welcome-title">HoD Dashboard — IT Dept. 🏛️</div>
+          <div class="welcome-sub">Department-level leave monitoring &amp; final approval authority.</div>
+          <div class="welcome-date"><i class="fas fa-calendar-day"></i> ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div class="welcome-actions">
+            <button class="btn btn-hod" onclick="nav('hodApprove')"><i class="fas fa-stamp"></i> Final Approvals ${d.hodPending>0?`<span style="background:rgba(255,255,255,.25);border-radius:20px;padding:1px 8px;font-size:11px">${d.hodPending}</span>`:''}</button>
+            <button class="btn btn-acc" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Generate Report</button>
+          </div>
+        </div>
+      </div>
+      ${d.hodPending>0?`
+      <div class="hod-alert mb-20">
+        <div class="hod-alert-icon"><i class="fas fa-stamp"></i></div>
+        <div class="hod-alert-text">
+          <div class="hod-alert-title">${d.hodPending} Request(s) Awaiting Your Final Approval</div>
+          <div class="hod-alert-sub">These have been approved by both Mentor and Chairperson and need your sign-off.</div>
+        </div>
+        <button class="btn btn-hod btn-sm" onclick="nav('hodApprove')" style="flex-shrink:0"><i class="fas fa-arrow-right"></i> Review Now</button>
+      </div>`:''}
+      <div class="stats-grid col4 mb-20">
+        ${sCard('Total Students',d.totalStudents,'fa-user-graduate','sc-blue')}
+        ${sCard('Total Requests',d.totalRequests,'fa-file-alt','sc-cyan')}
+        ${sCard('Fully Approved',d.approved,'fa-check-circle','sc-green')}
+        ${sCard('Awaiting My Approval',d.hodPending,'fa-stamp','sc-purple')}
+      </div>
+      <div class="stats-grid col3 mb-20">
+        ${sCard('Pending (Mentor/Chair)',d.pending,'fa-clock','sc-orange')}
+        ${sCard('Rejected',d.rejected,'fa-times-circle','sc-red')}
+        ${sCard('Total Absents',d.totalAbsent,'fa-user-slash','sc-red')}
+      </div>
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-area"></i> 6-Month Trend</div></div>
+          <div class="card-body"><div class="chart-wrap-tall"><canvas id="hodTrend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Leave Distribution</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="hodDist"></canvas></div></div>
+        </div>
+      </div>`;
+    charts.hodTrend=new Chart($('hodTrend'),{type:'bar',data:{labels:mt.labels,datasets:[
+      {label:'Leave',data:mt.leave,backgroundColor:'rgba(15,39,68,.72)',borderRadius:5},
+      {label:'OD',data:mt.od,backgroundColor:'rgba(224,92,26,.72)',borderRadius:5},
+      {label:'Medical',data:mt.medical,backgroundColor:'rgba(5,150,105,.72)',borderRadius:5},
+    ]},options:chartDefaultOpts()});
+    charts.hodDist=new Chart($('hodDist'),{type:'doughnut',data:{
+      labels:['Approved','HoD Review','Pending','Rejected'],
+      datasets:[{data:[d.approved,d.hodPending||0,d.pending,d.rejected],
+        backgroundColor:['rgba(5,150,105,.8)','rgba(124,58,237,.8)','rgba(217,119,6,.8)','rgba(220,38,38,.8)'],borderWidth:0,hoverOffset:5}]
+    },options:doughnutOpts()});
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderHodOver(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('hod.getOverview');
+    const{yearwise,sectionwise}=res.data;
+    pb.innerHTML=`
+      <div class="sec-head"><div class="sec-title">Department Overview</div></div>
+      <div class="card mb-14">
+        <div class="card-head"><div class="card-title"><i class="fas fa-layer-group"></i> Year-wise Summary</div></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Year</th><th>Students</th><th>Total Req.</th><th>Leave</th><th>OD</th><th>Approved</th><th>Rejected</th><th>Pending</th><th>Approval %</th></tr></thead>
+            <tbody>
+              ${yearwise.map(r=>`<tr>
+                <td class="fw7">${r.year} Year</td>
+                <td>${r.students}</td><td>${r.totalRequests}</td>
+                <td>${r.leave}</td><td>${r.od}</td>
+                <td class="text-suc fw6">${r.approved}</td>
+                <td class="text-dan fw6">${r.rejected}</td>
+                <td class="text-war fw6">${r.pending}</td>
+                <td>${r.totalRequests>0?`<div style="display:flex;align-items:center;gap:8px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${Math.round(r.approved/r.totalRequests*100)}%;background:var(--suc)"></div></div><span style="font-size:12px;font-weight:700">${Math.round(r.approved/r.totalRequests*100)}%</span></div>`:'—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i class="fas fa-table-columns"></i> Section-wise Breakdown</div></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Year</th><th>Section</th><th>Students</th><th>Total Req.</th><th>Approved</th><th>Rejected</th></tr></thead>
+            <tbody>
+              ${sectionwise.map(r=>`<tr>
+                <td class="fw6">${r.year} Year</td>
+                <td><span class="chip">Sec ${r.section}</span></td>
+                <td>${r.students}</td><td>${r.total}</td>
+                <td class="text-suc fw6">${r.approved}</td>
+                <td class="text-dan fw6">${r.rejected}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderHodYear(){
+  const pb=$('pageBody');
+  try{
+    const res=await api('hod.getYearwise');
+    const data=res.data||[];
+    pb.innerHTML=`
+      <div class="sec-head"><div class="sec-title">Year-wise Analysis</div></div>
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i> Leave vs OD by Year</div></div>
+          <div class="card-body"><div class="chart-wrap-tall"><canvas id="yrBar"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Approval Rate</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="yrAppr"></canvas></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i class="fas fa-table"></i> Detailed Table</div></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Year</th><th>Leave</th><th>OD</th><th>Medical</th><th>Approved</th><th>Rejected</th></tr></thead>
+            <tbody>${data.map(r=>`<tr>
+              <td class="fw7">${r.year} Year</td>
+              <td>${r.leave}</td><td>${r.od}</td><td>${r.medical}</td>
+              <td class="text-suc fw6">${r.approved}</td>
+              <td class="text-dan fw6">${r.rejected}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+    const labels=data.map(r=>r.year+' Yr');
+    charts.yrBar=new Chart($('yrBar'),{type:'bar',data:{labels,datasets:[
+      {label:'Leave',data:data.map(r=>r.leave),backgroundColor:'rgba(15,39,68,.75)',borderRadius:6},
+      {label:'OD',data:data.map(r=>r.od),backgroundColor:'rgba(224,92,26,.75)',borderRadius:6},
+      {label:'Medical',data:data.map(r=>r.medical),backgroundColor:'rgba(5,150,105,.75)',borderRadius:6},
+    ]},options:chartDefaultOpts()});
+    charts.yrAppr=new Chart($('yrAppr'),{type:'doughnut',data:{
+      labels:data.map(r=>r.year+' Year'),
+      datasets:[{data:data.map(r=>r.approved),backgroundColor:['rgba(15,39,68,.8)','rgba(37,99,168,.8)','rgba(224,92,26,.8)','rgba(5,150,105,.8)'],borderWidth:0,hoverOffset:5}]
+    },options:doughnutOpts()});
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function renderHodStud(){
+  const pb=$('pageBody');
+  pb.innerHTML=`
+    <div class="sec-head"><div class="sec-title">Student Reports</div></div>
+    <div class="card mb-14">
+      <div class="card-head"><div class="card-title"><i class="fas fa-filter"></i> Filters</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;align-items:flex-end">
+          <div class="fgrp" style="margin:0"><label class="flbl">Search</label><input type="text" class="finp" id="hsSearch" placeholder="Name / Reg. No"></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Year</label><select class="fsel" id="hsYear"><option value="">All</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Section</label><select class="fsel" id="hsSec"><option value="">All</option><option>A</option><option>B</option></select></div>
+          <button class="btn btn-pri" onclick="loadHodStudReport()"><i class="fas fa-search"></i> Search</button>
+        </div>
+      </div>
+    </div>
+    <div id="hodStudResult"><div class="empty-state"><i class="fas fa-search"></i><p>Use filters above and click Search</p></div></div>`;
+}
+
+async function loadHodStudReport(){
+  const payload={regNo:$('hsSearch').value.trim(),year:$('hsYear').value,section:$('hsSec').value};
+  const container=$('hodStudResult');
+  container.innerHTML=skeleton(4);
+  try{
+    const res=await api('hod.getStudentReport',payload);
+    const data=res.data||[];
+    container.innerHTML=`<div class="card">
+      <div class="card-head"><div class="card-title"><i class="fas fa-users"></i> Results (${data.length})</div>
+        <button class="btn btn-acc btn-sm" onclick="exportStudentPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl" id="hodStudTbl">
+          <thead><tr><th>Reg. No</th><th>Name</th><th>Year/Sec</th><th>Total Req.</th><th>Leave Days</th><th>OD Days</th><th>Approved</th><th>Rejected</th><th>Pending</th></tr></thead>
+          <tbody>
+            ${data.length===0?`<tr><td colspan="9"><div class="empty-state"><i class="fas fa-search"></i><p>No students found</p></div></td></tr>`
+            :data.map(s=>`<tr>
+              <td class="fw7 text-pri">${s.RegNo}</td>
+              <td class="fw6">${s.StudentName}</td>
+              <td><span class="chip">${s.Year}-${s.Section}</span></td>
+              <td>${s.totalRequests}</td>
+              <td>${s.leaveDays}</td><td>${s.odDays}</td>
+              <td class="text-suc fw6">${s.approved}</td>
+              <td class="text-dan fw6">${s.rejected}</td>
+              <td class="text-war fw6">${s.pending}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+    window._hodStudData=data;
+  }catch(e){container.innerHTML=errBlock(e.message)}
+}
+
+async function renderHodAll(){
+  const pb=$('pageBody');
+  pb.innerHTML=`
+    <div class="sec-head"><div class="sec-title">All Department Requests</div></div>
+    <div class="card mb-14">
+      <div class="card-head"><div class="card-title"><i class="fas fa-filter"></i> Filters</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;align-items:flex-end">
+          <div class="fgrp" style="margin:0"><label class="flbl">From</label><input type="date" class="finp" id="haFrom"></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">To</label><input type="date" class="finp" id="haTo"></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Year</label><select class="fsel" id="haYear"><option value="">All</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Section</label><select class="fsel" id="haSec"><option value="">All</option><option>A</option><option>B</option></select></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Type</label><select class="fsel" id="haType"><option value="">All</option><option>Leave</option><option>OD</option><option>Medical</option></select></div>
+          <div class="fgrp" style="margin:0"><label class="flbl">Status</label><select class="fsel" id="haStatus"><option value="">All</option><option>Approved</option><option>Rejected</option><option>Pending</option><option>Forwarded</option><option>HoD Review</option></select></div>
+          <button class="btn btn-pri" onclick="loadHodAll()"><i class="fas fa-search"></i> Search</button>
+          <button class="btn btn-acc" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Export</button>
+        </div>
+      </div>
+    </div>
+    <div id="hodAllResult"><div class="empty-state"><i class="fas fa-search"></i><p>Apply filters and click Search</p></div></div>`;
+}
+
+async function loadHodAll(){
+  const payload={fromDate:$('haFrom').value,toDate:$('haTo').value,year:$('haYear').value,section:$('haSec').value,leaveType:$('haType').value,status:$('haStatus').value};
+  const container=$('hodAllResult');
+  container.innerHTML=skeleton(5);
+  try{
+    const res=await api('hod.getAllRequests',payload);
+    const data=res.data||[];
+    window._hodAllData=data;
+    container.innerHTML=`<div class="card"><div class="card-head"><div class="card-title"><i class="fas fa-list"></i> ${data.length} Records</div><button class="btn btn-acc btn-sm" onclick="generatePDF(window._hodAllData)"><i class="fas fa-file-download"></i> PDF</button></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>ID</th><th>Student</th><th>Year/Sec</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Mentor</th><th>Chair</th><th>HoD</th><th>Status</th></tr></thead>
+        <tbody>${data.map(r=>`<tr>
+          <td class="fw7 text-pri">${r.RequestID}</td>
+          <td><div class="fw6">${r.StudentName}</div><div style="font-size:11px;color:var(--txt2)">${r.RegNo}</div></td>
+          <td><span class="chip">${r.Year||'—'}-${r.Section||'—'}</span></td>
+          <td>${typeBadge(r.LeaveType)}</td>
+          <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+          <td><span class="chip">${r.TotalDays}d</span></td>
+          <td><span class="ellipsis" title="${r.Reason}">${r.Reason}</span></td>
+          <td>${statusBadge(r.MentorStatus)}</td>
+          <td>${statusBadge(r.ChairpersonStatus)}</td>
+          <td>${statusBadge(r.HoDStatus||'Pending')}</td>
+          <td>${statusBadge(r.FinalStatus)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div></div>`;
+  }catch(e){container.innerHTML=errBlock(e.message)}
+}
+
+/* ══════════════════════════════════════════
+   PROFILE
+══════════════════════════════════════════ */
+async function renderProfile(){
+  const pb=$('pageBody');
+  try{
+    let profile=user;
+    if(user.role==='Student'){
+      const res=await api('student.getProfile',{regNo:user.loginId});
+      profile={...user,...res.data};
+    }
+    pb.innerHTML=`
+      <div class="sec-head"><div class="sec-title">My Profile</div></div>
+      <div style="max-width:600px">
+        <div class="card" style="overflow:hidden">
+          <div style="background:linear-gradient(135deg,var(--pri),var(--pri-light));padding:24px;display:flex;align-items:center;gap:16px;color:#fff">
+            <div style="width:56px;height:56px;background:rgba(255,255,255,.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;font-family:var(--font-serif)">${getInitials(user.name)}</div>
+            <div>
+              <div style="font-size:18px;font-weight:700">${user.name}</div>
+              <div style="font-size:12px;opacity:.8;margin-top:2px">${user.role} • ${user.dept||'Information Technology'}</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-grid">
+              <div class="info-item"><label>Login ID</label><p>${user.loginId}</p></div>
+              <div class="info-item"><label>Role</label><p>${user.role}</p></div>
+              <div class="info-item"><label>Department</label><p>${user.Department||user.dept||'IT'}</p></div>
+              ${user.role==='Student'?`
+              <div class="info-item"><label>Reg. No</label><p>${profile.RegNo||user.loginId}</p></div>
+              <div class="info-item"><label>Year</label><p>${profile.Year||user.year||'—'}</p></div>
+              <div class="info-item"><label>Section</label><p>${profile.Section||user.section||'—'}</p></div>
+              <div class="info-item"><label>Mentor ID</label><p>${profile.MentorID||user.mentorId||'—'}</p></div>
+              <div class="info-item"><label>Mobile</label><p>${profile.StudentMobile||'—'}</p></div>`:''}
+            </div>
+            <div class="divider"></div>
+            <div style="margin-bottom:14px">
+              <div class="flbl" style="margin-bottom:10px">Change Password</div>
+              <div class="fcols2">
+                <div class="fgrp"><label class="flbl">Current Password</label><input type="password" class="finp" id="cpOld" placeholder="Current password"></div>
+                <div class="fgrp"><label class="flbl">New Password</label><input type="password" class="finp" id="cpNew" placeholder="New password"></div>
+              </div>
+            </div>
+            <button class="btn btn-pri" onclick="changePassword()"><i class="fas fa-key"></i> Update Password</button>
+          </div>
+        </div>
+      </div>`;
+  }catch(e){pb.innerHTML=errBlock(e.message)}
+}
+
+async function changePassword(){
+  const old=$('cpOld').value.trim(),nw=$('cpNew').value.trim();
+  if(!old||!nw){toast('Fill both password fields','war');return}
+  if(nw.length<4){toast('New password must be at least 4 characters','war');return}
+  try{
+    showG('Updating password…');
+    await api('changePassword',{loginId:user.loginId,oldPassword:old,newPassword:nw});
+    toast('Password updated successfully!','suc');
+    $('cpOld').value='';$('cpNew').value='';
+  }catch(e){toast(e.message,'err')}finally{hideG()}
+}
+
+/* ══════════════════════════════════════════
+   SHARED TABLE
+══════════════════════════════════════════ */
+function renderRequestsTable(pb,reqs,tblId,showExport=false){
+  pb.innerHTML=`
+    <div class="sec-head">
+      <div><div class="sec-title">All Requests</div><div class="sec-sub">${reqs.length} records</div></div>
+      ${showExport?`<button class="btn btn-acc" onclick="generatePDF(window._allData)"><i class="fas fa-file-pdf"></i> Export PDF</button>`:''}
+    </div>
+    <div class="card">
+      <div class="filter-bar">
+        <select class="fsel" onchange="filterTbl(this.value,'${tblId}','LeaveType')">
+          <option value="">All Types</option><option>Leave</option><option>OD</option><option>Medical</option><option>Emergency</option>
+        </select>
+        <select class="fsel" onchange="filterTbl(this.value,'${tblId}','FinalStatus')">
+          <option value="">All Status</option><option>Pending</option><option>Forwarded</option><option>HoD Review</option><option>Approved</option><option>Rejected</option>
+        </select>
+        <input type="text" class="finp" placeholder="Search…" oninput="searchTbl(this.value,'${tblId}')">
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl" id="${tblId}">
+          <thead><tr>
+            <th>ID</th><th>Student</th><th>Yr/Sec</th><th>Type</th>
+            <th>From</th><th>To</th><th>Days</th><th>Reason</th>
+            <th>Mentor</th><th>Chairperson</th><th>HoD</th><th>Final</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${reqs.length===0
+            ?`<tr><td colspan="13"><div class="empty-state"><i class="fas fa-inbox"></i><p>No requests found</p></div></td></tr>`
+            :reqs.map(r=>`<tr data-search="${r.RequestID} ${r.StudentName} ${r.RegNo} ${r.FinalStatus} ${r.LeaveType}">
+              <td class="fw7 text-pri">${r.RequestID}</td>
+              <td><div class="fw6">${r.StudentName}</div><div style="font-size:11px;color:var(--txt2)">${r.RegNo}</div></td>
+              <td><span class="chip">${r.Year||'?'}-${r.Section||'?'}</span></td>
+              <td>${typeBadge(r.LeaveType)}</td>
+              <td>${fmtDate(r.FromDate)}</td><td>${fmtDate(r.ToDate)}</td>
+              <td><span class="chip">${r.TotalDays}d</span></td>
+              <td><span class="ellipsis" title="${r.Reason}">${r.Reason}</span></td>
+              <td>${statusBadge(r.MentorStatus)}</td>
+              <td>${statusBadge(r.ChairpersonStatus)}</td>
+              <td>${statusBadge(r.HoDStatus||'Pending')}</td>
+              <td>${statusBadge(r.FinalStatus)}</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openReview('${r.RequestID}','view')"><i class="fas fa-eye"></i></button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  window._allData=reqs;
+}
+
+function filterTbl(val,tblId){
+  const rows=document.querySelectorAll(`#${tblId} tbody tr`);
+  rows.forEach(r=>{r.style.display=(!val||r.textContent.toLowerCase().includes(val.toLowerCase()))?'':'none'});
+}
+function searchTbl(val,tblId){
+  const rows=document.querySelectorAll(`#${tblId} tbody tr`);
+  rows.forEach(r=>{r.style.display=(!val||r.textContent.toLowerCase().includes(val.toLowerCase()))?'':'none'});
+}
+
+/* ══════════════════════════════════════════
+   LEAVE SUBMISSION
+══════════════════════════════════════════ */
+function openApplyModal(){
+  const today=todayISO();
+  $('mLFrom').min=today;$('mLTo').min=today;
+  $('mLFrom').value='';$('mLTo').value='';
+  $('mLType').value='';$('mLReason').value='';
+  $('odExtra').style.display='none';$('daysDisplay').style.display='none';
+  openModal('mLeave');
+}
+function onLeaveTypeChange(){$('odExtra').style.display=$('mLType').value==='OD'?'block':'none'}
+function calcDays(){
+  const f=$('mLFrom').value,t=$('mLTo').value;
+  if(f&&t){
+    const days=Math.max(1,Math.ceil((new Date(t)-new Date(f))/(86400000))+1);
+    $('daysDisplay').style.display='block';$('daysText').textContent=days+' day(s) selected';
+    if(t<f)$('mLTo').value=f;
+  }
+}
+async function submitLeave(){
+  const type=$('mLType').value,from=$('mLFrom').value,to=$('mLTo').value,reason=$('mLReason').value.trim();
+  if(!type||!from||!to||!reason){toast('Please fill all required fields','war');return}
+  const days=Math.max(1,Math.ceil((new Date(to)-new Date(from))/(86400000))+1);
+  const btn=$('submitLBtn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Submitting…';
+  try{
+    await api('student.submitLeave',{
+      regNo:user.loginId,studentName:user.name,
+      year:user.year||user.Year,section:user.section||user.Section,
+      leaveType:type,fromDate:from,toDate:to,totalDays:days,reason
+    });
+    closeModal('mLeave');
+    toast('Leave request submitted successfully!','suc');
+    if(currentPage==='myReqs')renderMyReqs();
+    else if(currentPage==='dash')loadPage('dash');
+  }catch(e){toast(e.message,'err')}
+  finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Request'}
+}
+
+/* ══════════════════════════════════════════
+   REVIEW MODAL
+══════════════════════════════════════════ */
+let _reviewCache=null;
+async function openReview(reqId,role){
+  let req=null;
+  const caches=[window._allData,window._hodAllData,window._hodPendingData].filter(Boolean).flatMap(a=>Array.isArray(a)?a:[]);
+  req=caches.find(r=>r.RequestID===reqId);
+
+  if(!req){
+    try{
+      let res;
+      if(user.role==='Mentor')    res=await api('mentor.getAllRequests',{mentorId:user.loginId});
+      else if(user.role==='HoD')  res=await api('hod.getAllRequests',{});
+      else                        res=await api('chair.getAllRequests');
+      req=(res.data||[]).find(r=>r.RequestID===reqId);
+    }catch(e){toast('Could not load request details','err');return}
+  }
+  if(!req){toast('Request not found','err');return}
+  _reviewCache=req;
+
+  const hodSt=req.HoDStatus||'Pending';
+  const hodCls=hodSt.toLowerCase().replace(/\s+/g,'');
+
+  $('mReviewBody').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div>
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">Request ID</div>
+        <div style="font-size:22px;font-weight:800;color:var(--pri)">${req.RequestID}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${typeBadge(req.LeaveType)} ${statusBadge(req.FinalStatus)}</div>
+    </div>
+    <div class="info-grid" style="margin-bottom:14px">
+      <div class="info-item"><label>Student Name</label><p>${req.StudentName}</p></div>
+      <div class="info-item"><label>Reg. No</label><p>${req.RegNo}</p></div>
+      <div class="info-item"><label>Year / Section</label><p>${req.Year||'—'} / ${req.Section||'—'}</p></div>
+      <div class="info-item"><label>Leave Type</label><p>${req.LeaveType}</p></div>
+      <div class="info-item"><label>From Date</label><p>${fmtDate(req.FromDate)}</p></div>
+      <div class="info-item"><label>To Date</label><p>${fmtDate(req.ToDate)}</p></div>
+      <div class="info-item"><label>Total Days</label><p>${req.TotalDays} day(s)</p></div>
+      <div class="info-item"><label>Applied On</label><p>${fmtDate(req.ApplyDate)}</p></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div class="flbl" style="margin-bottom:5px">Reason</div>
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:11px;font-size:13px;border:1px solid var(--border)">${req.Reason}</div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Approval Trail</div>
+    <div class="timeline">
+      <div class="tl-item ${req.MentorStatus.toLowerCase()}">
+        <div class="tl-date">Step 1 — Mentor Review ${req.MentorActionDate?'• '+fmtDate(req.MentorActionDate):''}</div>
+        <div class="tl-text">${req.MentorStatus}${req.MentorRemarks?' — '+req.MentorRemarks:''}</div>
+      </div>
+      <div class="tl-item ${req.ChairpersonStatus.toLowerCase()}">
+        <div class="tl-date">Step 2 — Chairperson Review ${req.ChairpersonActionDate?'• '+fmtDate(req.ChairpersonActionDate):''}</div>
+        <div class="tl-text">${req.ChairpersonStatus}${req.ChairpersonRemarks?' — '+req.ChairpersonRemarks:''}</div>
+      </div>
+      <div class="tl-item ${hodCls}">
+        <div class="tl-date">Step 3 — HoD Final Approval ${req.HoDActionDate?'• '+fmtDate(req.HoDActionDate):''}</div>
+        <div class="tl-text">${hodSt}${req.HoDRemarks?' — '+req.HoDRemarks:''}</div>
+      </div>
+    </div>
+    ${role!=='view'?`<div class="divider"></div><div class="fgrp"><label class="flbl">Remarks</label><textarea class="ftxt" id="reviewRemark" style="min-height:60px" placeholder="Add remarks (optional)…"></textarea></div>`:''}`;
+
+  const foot=$('mReviewFoot');
+  if(role==='mentor'){
+    foot.innerHTML=`
+      <button class="btn btn-ghost" onclick="closeModal('mReview')">Close</button>
+      <button class="btn btn-dan" onclick="actFromReview('Rejected','mentor')"><i class="fas fa-times"></i> Reject</button>
+      <button class="btn btn-suc" onclick="actFromReview('Approved','mentor')"><i class="fas fa-check"></i> Approve → Chairperson</button>`;
+  }else if(role==='chair'){
+    foot.innerHTML=`
+      <button class="btn btn-ghost" onclick="closeModal('mReview')">Close</button>
+      <button class="btn btn-dan" onclick="actFromReview('Rejected','chair')"><i class="fas fa-times"></i> Reject</button>
+      <button class="btn btn-hod" onclick="actFromReview('Approved','chair')"><i class="fas fa-arrow-up"></i> Approve → HoD</button>`;
+  }else if(role==='hod'){
+    foot.innerHTML=`
+      <button class="btn btn-ghost" onclick="closeModal('mReview')">Close</button>
+      <button class="btn btn-dan" onclick="actFromReview('Rejected','hod')"><i class="fas fa-times"></i> Final Reject</button>
+      <button class="btn btn-suc" onclick="actFromReview('Approved','hod')"><i class="fas fa-stamp"></i> Final Approve</button>`;
+  }else{
+    foot.innerHTML=`<button class="btn btn-ghost" onclick="closeModal('mReview')">Close</button>`;
+  }
+  openModal('mReview');
+}
+
+async function actFromReview(action,role){
+  if(!_reviewCache)return;
+  const remarks=($('reviewRemark')||{}).value||'';
+  closeModal('mReview');
+  await doAct(_reviewCache.RequestID,action,role,remarks);
+}
+
+async function quickAct(reqId,action,role){
+  await doAct(reqId,action,role,action==='Approved'?'Approved':'Rejected');
+}
+
+async function doAct(reqId,action,role,remarks){
+  showG((action==='Approved'?'Approving':'Rejecting')+' request…');
+  try{
+    if(role==='mentor'){
+      await api('mentor.actOnRequest',{requestId:reqId,action,remarks,mentorId:user.loginId});
+    }else if(role==='chair'){
+      await api('chair.actOnRequest',{requestId:reqId,action,remarks});
+    }else if(role==='hod'){
+      // ← NEW: HoD final approval
+      await api('hod.actOnRequest',{requestId:reqId,action,remarks});
+    }
+    const msgs={
+      Approved:{mentor:'Approved — forwarded to Chairperson.',chair:'Approved — forwarded to HoD for final sign-off.',hod:'Final approval granted! ✅'},
+      Rejected:{mentor:'Rejected by Mentor.',chair:'Rejected by Chairperson.',hod:'Finally rejected by HoD.'}
+    };
+    toast(msgs[action]?.[role]||`Request ${action.toLowerCase()}.`,action==='Approved'?'suc':'inf');
+    loadPage(currentPage);
+  }catch(e){toast(e.message,'err')}
+  finally{hideG()}
+}
+
+/* ══════════════════════════════════════════
+   ABSENT MODAL
+══════════════════════════════════════════ */
+async function openAbsentModal(){
+  $('mAbsDate').value=todayISO();
+  $('mAbsReason').value='';$('mAbsNotify').checked=false;
+  const sel=$('mAbsStu');
+  sel.innerHTML='<option value="">Loading students…</option>';
+  openModal('mAbsent');
+  try{
+    if(!mentorStudents.length){
+      const res=await api('mentor.getStudents',{mentorId:user.loginId});
+      mentorStudents=res.data||[];
+    }
+    sel.innerHTML='<option value="">— Select Student —</option>'+
+      mentorStudents.map(s=>`<option value="${s.RegNo}" data-name="${s.StudentName}" data-year="${s.Year}" data-sec="${s.Section}">${s.StudentName} (${s.RegNo})</option>`).join('');
+  }catch(e){sel.innerHTML='<option>Error loading students</option>'}
+}
+
+async function submitAbsent(){
+  const sel=$('mAbsStu'),regNo=sel.value;
+  if(!regNo){toast('Select a student','war');return}
+  const opt=sel.selectedOptions[0],date=$('mAbsDate').value;
+  if(!date){toast('Select a date','war');return}
+  const reason=$('mAbsReason').value.trim()||'Not informed';
+  const notify=$('mAbsNotify').checked;
+  showG('Saving absent entry…');
+  try{
+    await api('mentor.addAbsent',{mentorId:user.loginId,regNo,studentName:opt.dataset.name,year:opt.dataset.year,section:opt.dataset.sec,date,reason,parentNotified:notify});
+    if(notify){
+      const stu=mentorStudents.find(s=>s.RegNo===regNo);
+      if(stu){
+        const msg=`Dear Parent, your ward ${stu.StudentName} (${regNo}) was absent on ${date} without prior information. Kindly contact the college. — VCET IT Dept.`;
+        await api('mentor.logWA',{sentBy:user.loginId,regNo,studentName:stu.StudentName,parentName:stu.FatherName,parentNumber:stu.FatherMobile,message:msg});
+        window.open(`https://wa.me/91${stu.FatherMobile}?text=${encodeURIComponent(msg)}`,'_blank');
+      }
+    }
+    closeModal('mAbsent');
+    toast(notify?'Entry added & WhatsApp opened!':'Absent entry added!','suc');
+    if(currentPage==='absent')renderAbsent();
+  }catch(e){toast(e.message,'err')}finally{hideG()}
+}
+
+/* ══════════════════════════════════════════
+   WHATSAPP MODAL
+══════════════════════════════════════════ */
+async function openWA(regNo){
+  let stu=mentorStudents.find(s=>s.RegNo===regNo);
+  if(!stu){
+    try{
+      if(!mentorStudents.length){const res=await api('mentor.getStudents',{mentorId:user.loginId});mentorStudents=res.data||[]}
+      stu=mentorStudents.find(s=>s.RegNo===regNo);
+    }catch(e){}
+  }
+  if(!stu){toast('Student not found','err');return}
+  $('mWABody').innerHTML=`
+    <div class="grid-2" style="margin-bottom:14px">
+      <div class="contact-card">
+        <div class="cc-rel">Father</div>
+        <div class="cc-name">${stu.FatherName}</div>
+        <div class="cc-phone">${stu.FatherMobile}</div>
+        <div class="cc-actions">
+          <button class="btn btn-wa btn-sm" onclick="sendWA('${stu.FatherMobile}','${stu.StudentName}','${regNo}','${stu.FatherName}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+          <a href="tel:${stu.FatherMobile}" class="btn btn-pri btn-sm"><i class="fas fa-phone"></i> Call</a>
+        </div>
+      </div>
+      <div class="contact-card">
+        <div class="cc-rel">Mother</div>
+        <div class="cc-name">${stu.MotherName}</div>
+        <div class="cc-phone">${stu.MotherMobile}</div>
+        <div class="cc-actions">
+          <button class="btn btn-wa btn-sm" onclick="sendWA('${stu.MotherMobile}','${stu.StudentName}','${regNo}','${stu.MotherName}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+          <a href="tel:${stu.MotherMobile}" class="btn btn-pri btn-sm"><i class="fas fa-phone"></i> Call</a>
+        </div>
+      </div>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">Message</label>
+      <textarea class="ftxt" id="waMsg">Dear Parent, your ward ${stu.StudentName} (${regNo}) has been marked absent today without prior information. Please contact the college office immediately. — VCET IT Department.</textarea>
+    </div>`;
+  $('mWAFoot').innerHTML=`
+    <button class="btn btn-ghost" onclick="closeModal('mWA')">Close</button>
+    <button class="btn btn-wa" onclick="sendBothWA('${stu.FatherMobile}','${stu.MotherMobile}','${stu.StudentName}','${regNo}','${stu.FatherName}','${stu.MotherName}')"><i class="fab fa-whatsapp"></i> Send to Both Parents</button>`;
+  openModal('mWA');
+}
+
+async function sendWA(phone,stuName,regNo,parentName){
+  const msg=($('waMsg')||{}).value||`Dear Parent, your ward ${stuName} (${regNo}) needs attention.`;
+  try{
+    await api('mentor.logWA',{sentBy:user.loginId,regNo,studentName:stuName,parentName,parentNumber:phone,message:msg});
+    window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+    toast('WhatsApp opened!','suc');
+  }catch(e){window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`,'_blank')}
+}
+
+async function sendBothWA(p1,p2,stuName,regNo,n1,n2){
+  await sendWA(p1,stuName,regNo,n1);
+  setTimeout(()=>sendWA(p2,stuName,regNo,n2),1500);
+  closeModal('mWA');
+}
+
+/* ══════════════════════════════════════════
+   PDF GENERATION
+══════════════════════════════════════════ */
+function onReportTypeChange(){
+  const t=$('rType').value;
+  $('rDayField').style.display=t==='daywise'?'block':'none';
+  $('rRangeField').style.display=t==='daterange'?'block':'none';
+  $('rMonthField').style.display=t==='monthwise'?'block':'none';
+  $('rStudentField').style.display=t==='studentwise'?'block':'none';
+  $('rYearField').style.display=['yearwise','studentwise'].includes(t)?'block':'none';
+}
+
+async function generateReport(){
+  closeModal('mReport');showG('Fetching report data…');
+  try{
+    const type=$('rType').value;
+    let payload={status:$('rStatus').value};
+    if(type==='daywise'){const d=$('rDay').value;payload.fromDate=d;payload.toDate=d}
+    else if(type==='daterange'){payload.fromDate=$('rFrom').value;payload.toDate=$('rTo').value}
+    else if(type==='monthwise'){const m=$('rMonth').value;if(m){payload.fromDate=m+'-01';payload.toDate=m+'-31'}}
+    else if(type==='studentwise'){payload.regNo=$('rStudent').value}
+    if($('rYear')&&$('rYear').value)payload.year=$('rYear').value;
+    if($('rSection')&&$('rSection').value)payload.section=$('rSection').value;
+
+    let apiName='hod.getAllRequests';
+    if(user.role==='Chairperson')apiName='chair.getAllRequests';
+    else if(user.role==='Mentor'){apiName='mentor.getAllRequests';payload.mentorId=user.loginId}
+
+    const res=await api(apiName,payload);
+    let data=res.data||[];
+    if(payload.status)data=data.filter(r=>r.FinalStatus===payload.status);
+    generatePDF(data,type);
+  }catch(e){toast('Report generation failed: '+e.message,'err')}
+  finally{hideG()}
+}
+
+function generatePDF(data,reportType='all'){
+  if(!data||!data.length){toast('No data found for selected filters','war');return}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('l','mm','a4');
+  const pw=doc.internal.pageSize.getWidth();
+
+  doc.setFillColor(15,39,68);doc.rect(0,0,pw,28,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text('VELAMMAL COLLEGE OF ENGINEERING AND TECHNOLOGY',pw/2,9,{align:'center'});
+  doc.setFontSize(9);
+  doc.text('Department of Information Technology — Leave & OD Sanction Report',pw/2,16,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(`Generated: ${new Date().toLocaleString('en-IN')} | By: ${user.name} (${user.role}) | Records: ${data.length}`,pw/2,22,{align:'center'});
+
+  doc.setTextColor(15,39,68);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  const sumX=14,sy=33;
+  const summaries=[
+    `Total: ${data.length}`,
+    `Approved: ${data.filter(r=>r.FinalStatus==='Approved').length}`,
+    `HoD Review: ${data.filter(r=>r.FinalStatus==='HoD Review').length}`,
+    `Rejected: ${data.filter(r=>r.FinalStatus==='Rejected').length}`,
+    `Leave: ${data.filter(r=>r.LeaveType==='Leave').length}`,
+    `OD: ${data.filter(r=>r.LeaveType==='OD').length}`
+  ];
+  summaries.forEach((s,i)=>doc.text(s,sumX+(i*44),sy));
+
+  doc.autoTable({
+    startY:sy+5,
+    head:[['Req ID','Reg No','Student','Yr/Sec','Type','From','To','Days','Reason','Mentor','Chair','HoD','Status']],
+    body:data.map(r=>[
+      r.RequestID,r.RegNo,r.StudentName,
+      (r.Year||'?')+'-'+(r.Section||'?'),
+      r.LeaveType,r.FromDate,r.ToDate,r.TotalDays,
+      r.Reason?r.Reason.slice(0,30):'—',
+      r.MentorStatus,r.ChairpersonStatus,
+      r.HoDStatus||'Pending',r.FinalStatus
+    ]),
+    styles:{fontSize:7,cellPadding:2.2,font:'helvetica',overflow:'linebreak'},
+    headStyles:{fillColor:[224,92,26],textColor:255,fontStyle:'bold',fontSize:7.5},
+    alternateRowStyles:{fillColor:[240,247,255]},
+    didDrawCell:data=>{
+      if(data.section==='body'&&data.column.index===12){
+        const v=data.cell.raw;
+        const clr=v==='Approved'?[5,150,105]:v==='Rejected'?[220,38,38]:v==='HoD Review'?[124,58,237]:[217,119,6];
+        doc.setTextColor(...clr);doc.setFontSize(7);
+        doc.text(v,data.cell.x+data.cell.padding('left'),data.cell.y+data.cell.height/2+2);
+        doc.setTextColor(0,0,0);
+      }
+    }
+  });
+
+  const pc=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pc;i++){
+    doc.setPage(i);doc.setFontSize(7);doc.setTextColor(150);
+    doc.text(`Page ${i} of ${pc} | VCET-IT Leave Management System | Confidential`,pw/2,doc.internal.pageSize.getHeight()-4,{align:'center'});
+  }
+  doc.save(`VCET_IT_Leave_${reportType}_${new Date().toISOString().split('T')[0]}.pdf`);
+  toast('PDF downloaded!','suc');
+}
+
+async function exportStudentPDF(){
+  const data=window._hodStudData;
+  if(!data||!data.length){toast('No data to export','war');return}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('l','mm','a4');
+  const pw=doc.internal.pageSize.getWidth();
+  doc.setFillColor(15,39,68);doc.rect(0,0,pw,24,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text('VCET-IT | Student Leave Summary Report',pw/2,10,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(`Generated: ${new Date().toLocaleString('en-IN')} | By: ${user.name}`,pw/2,18,{align:'center'});
+  doc.autoTable({
+    startY:28,
+    head:[['Reg. No','Name','Year','Section','Total Req.','Leave Days','OD Days','Approved','Rejected','Pending']],
+    body:data.map(s=>[s.RegNo,s.StudentName,s.Year,s.Section,s.totalRequests,s.leaveDays,s.odDays,s.approved,s.rejected,s.pending]),
+    styles:{fontSize:8,cellPadding:2.5},
+    headStyles:{fillColor:[15,39,68],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[240,247,255]}
+  });
+  doc.save(`VCET_IT_Student_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+  toast('Student report downloaded!','suc');
+}
+
+/* ══════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════ */
+function sCard(label,val,icon,cls){
+  return `<div class="stat-card ${cls}"><div class="stat-icon"><i class="fas ${icon}"></i></div><div class="stat-val">${val}</div><div class="stat-lbl">${label}</div></div>`;
+}
+function errBlock(msg){
+  return `<div style="max-width:480px;margin:0 auto">
+    <div style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);border-radius:var(--r);padding:24px;text-align:center">
+      <i class="fas fa-exclamation-triangle" style="font-size:32px;color:var(--dan);display:block;margin-bottom:12px"></i>
+      <div style="font-weight:700;color:var(--dan);margin-bottom:6px">Failed to load data</div>
+      <div style="font-size:13px;color:var(--txt2);margin-bottom:16px">${msg}</div>
+      <button class="btn btn-pri" onclick="loadPage(currentPage)"><i class="fas fa-sync-alt"></i> Try Again</button>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

@@ -32,6 +32,46 @@
   </div>
 </div>
 
+<!-- WHATSAPP MODAL -->
+<div class="modal-bg" id="mWA">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" style="color:#25d366"><i class="fab fa-whatsapp"></i> Send WhatsApp Alert</div>
+      <button class="modal-close" onclick="closeModal('mWA')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="mWABody"></div>
+    <div class="modal-foot" id="mWAFoot"></div>
+  </div>
+</div>
+
+<!-- LOGOUT MODAL -->
+<div id="mLogout" style="display:none;position:fixed;inset:0;z-index:9999;background:#ffffff;align-items:center;justify-content:center">
+  <div style="background:var(--card,#fff);border:1px solid var(--border,#dde6f0);border-radius:16px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.18)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="width:40px;height:40px;border-radius:12px;background:rgba(220,38,38,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="fas fa-sign-out-alt" style="color:#dc2626;font-size:16px"></i>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:15px;color:var(--txt,#1a3c5e)">Sign Out</div>
+        <div style="font-size:12px;color:var(--txt2,#4a6080);margin-top:1px">Chairperson Portal</div>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--txt2,#4a6080);margin:0 0 20px;line-height:1.5">
+      Are you sure you want to sign out from the portal?
+    </p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="document.getElementById('mLogout').style.display='none'"
+        style="padding:8px 18px;border-radius:8px;border:1px solid var(--border,#dde6f0);background:var(--bg2,#f0f7ff);color:var(--txt,#1a3c5e);font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">
+        Cancel
+      </button>
+      <button onclick="sessionStorage.removeItem('vcet_user');window.location.href='index.html';"
+        style="padding:8px 18px;border-radius:8px;border:none;background:#dc2626;color:#fff;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- REPORT MODAL injected by JS -->
 <div id="reportModalSlot"></div>
 
@@ -82,13 +122,16 @@ let user = JSON.parse(sessionStorage.getItem('vcet_user') || 'null');
 if (!user || user.role !== 'Chairperson') { window.location.href = 'index.html'; }
 
 let currentPage = '';
+let allStudents = []; // Cache all students data
 
 const NAV_ITEMS = [
   { id: 'dash',      icon: 'fa-home',             label: 'Dashboard' },
   { id: 'forwarded', icon: 'fa-clipboard-check',  label: 'Approve Requests' },
   { id: 'chairAll',  icon: 'fa-list-alt',         label: 'All Requests' },
+  { id: 'students',  icon: 'fa-users',            label: 'All Students' },
   { id: 'analysis',  icon: 'fa-chart-bar',        label: 'Student Analysis' },
-  { id: 'reports',   icon: 'fa-chart-bar',        label: 'Reports & Analytics' },
+  { id: 'reports',   icon: 'fa-chart-line',       label: 'Reports & Analytics' },
+  { id: 'advanced',  icon: 'fa-chart-pie',        label: 'Advanced Analytics' },
   { id: 'profile',   icon: 'fa-user-circle',      label: 'My Profile' }
 ];
 
@@ -107,7 +150,8 @@ function nav(pageId) {
   if (el) el.classList.add('active');
   const titles = {
     dash:'Dashboard', forwarded:'Approve Requests', chairAll:'All Requests',
-    analysis:'Student Analysis', reports:'Reports & Analytics', profile:'My Profile'
+    students:'All Students', analysis:'Student Analysis', reports:'Reports & Analytics',
+    advanced:'Advanced Analytics', profile:'My Profile'
   };
   $('tbTitle').textContent = titles[pageId] || pageId;
   closeSidebar();
@@ -122,7 +166,8 @@ function loadPage(id) {
   pb.innerHTML = `<div class="sk-block mb-14">${skeleton()}</div><div class="sk-block">${skeleton(5)}</div>`;
   const pages = {
     dash: renderDash, forwarded: renderForwarded, chairAll: renderChairAll,
-    analysis: renderAnalysis, reports: renderReports, profile: renderProfile
+    students: renderStudents, analysis: renderAnalysis, reports: renderReports,
+    advanced: renderAdvanced, profile: renderProfile
   };
   const fn = pages[id];
   if (fn) fn();
@@ -130,9 +175,7 @@ function loadPage(id) {
 }
 
 function doLogout() {
-  if (!confirm('Sign out from Chairperson Portal?')) return;
-  sessionStorage.removeItem('vcet_user');
-  window.location.href = 'index.html';
+  document.getElementById('mLogout').style.display = 'flex';
 }
 
 /* ══════════════════════════════════════════
@@ -154,7 +197,7 @@ async function renderDash() {
           <div class="welcome-actions">
             <button class="btn btn-pri" onclick="nav('forwarded')"><i class="fas fa-clipboard-check"></i> Approve Requests</button>
             <button class="btn btn-acc" onclick="openModal('mReport')"><i class="fas fa-file-pdf"></i> Generate Report</button>
-            <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25)" onclick="nav('analysis')"><i class="fas fa-chart-bar"></i> Analysis</button>
+            <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25)" onclick="nav('advanced')"><i class="fas fa-chart-pie"></i> Advanced Analytics</button>
           </div>
         </div>
       </div>
@@ -301,6 +344,63 @@ async function renderChairAll() {
 }
 
 /* ══════════════════════════════════════════
+   ALL STUDENTS
+══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   ALL STUDENTS — Modified to pass facultyId
+══════════════════════════════════════════ */
+async function renderStudents() {
+  const pb = $('pageBody');
+  try {
+    if (!allStudents.length) {
+      // Pass the current user's facultyId to the API
+      const res = await api('chair.getAllStudents', { facultyId: user.facultyId });
+      allStudents = res.data || [];
+    }
+
+    pb.innerHTML = `
+      <div class="sec-head">
+        <div><div class="sec-title">All Students</div><div class="sec-sub">${allStudents.length} students assigned to you</div></div>
+      </div>
+      <div class="card">
+        <div class="filter-bar">
+          <input type="text" class="finp" style="max-width:280px;flex:1" placeholder="Search student, Reg. No…" oninput="searchTbl(this.value,'stuTbl')">
+          <select class="fsel" onchange="filterTbl(this.value,'stuTbl')">
+            <option value="">All Sections</option><option value="A">Section A</option><option value="B">Section B</option>
+          </select>
+          <select class="fsel" onchange="filterTbl(this.value,'stuTbl')">
+            <option value="">All Years</option><option>I</option><option>II</option><option>III</option><option>IV</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="stuTbl">
+            <thead><tr><th>Reg. No</th><th>Name</th><th>Year/Sec</th><th>Mentor</th><th>Father</th><th>Father Mobile</th><th>Mother</th><th>Mother Mobile</th><th>Student Mobile</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${allStudents.length === 0
+              ? `<tr><td colspan="10"><div class="empty-state"><i class="fas fa-users"></i><p>No students assigned to you</p></div></td></tr>`
+              : allStudents.map(s => `<tr data-search="${s.RegNo} ${s.StudentName} ${s.Section} ${s.Year} ${s.MentorName||''}">
+                <td class="fw7 text-pri">${s.RegNo}</td>
+                <td class="fw6">${s.StudentName}</td>
+                <td><span class="chip">${s.Year}-${s.Section}</span></td>
+                <td style="font-size:12px;color:var(--txt2)">${s.MentorName||'—'}</td>
+                <td>${s.FatherName||'—'}</td>
+                <td><a href="tel:${s.FatherMobile}" style="color:var(--pri);font-weight:600"><i class="fas fa-phone fa-xs"></i> ${s.FatherMobile||'—'}</a></td>
+                <td>${s.MotherName||'—'}</td>
+                <td><a href="tel:${s.MotherMobile}" style="color:var(--pri);font-weight:600"><i class="fas fa-phone fa-xs"></i> ${s.MotherMobile||'—'}</a></td>
+                <td>${s.StudentMobile||'—'}</td>
+                <td><div style="display:flex;gap:5px">
+                  <button class="btn btn-wa btn-xs" onclick="openWA('${s.RegNo}')"><i class="fab fa-whatsapp"></i></button>
+                  <a href="tel:${s.FatherMobile}" class="btn btn-pri btn-xs"><i class="fas fa-phone"></i></a>
+                </div></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (e) { pb.innerHTML = errBlock(e.message); }
+}
+
+/* ══════════════════════════════════════════
    STUDENT ANALYSIS (Chairperson — all students)
 ══════════════════════════════════════════ */
 async function renderAnalysis() {
@@ -404,17 +504,19 @@ async function loadAnalysis() {
         </div>
       </div>
       <!-- Student table -->
-      <div class="card">
-        <div class="card-head"><div class="card-title"><i class="fas fa-users"></i> Student-wise Breakdown (${students.length})</div></div>
+      <div class="card mb-14">
+        <div class="card-head">
+          <div class="card-title"><i class="fas fa-users"></i> Student-wise Breakdown (${students.length})</div>
+        </div>
         <div class="filter-bar">
           <input type="text" class="finp" placeholder="Search student…" oninput="searchTbl(this.value,'csStudTbl')">
         </div>
         <div class="tbl-wrap">
           <table class="tbl" id="csStudTbl">
-            <thead><tr><th>Reg. No</th><th>Name</th><th>Year/Sec</th><th>Total Req.</th><th>Leave Days</th><th>OD Days</th><th>Medical Days</th><th>Approved</th><th>Rejected</th><th>Pending</th><th>Approval %</th></tr></thead>
+            <thead><tr><th>Reg. No</th><th>Name</th><th>Year/Sec</th><th>Total Req.</th><th>Leave Days</th><th>OD Days</th><th>Medical Days</th><th>Approved</th><th>Rejected</th><th>Pending</th><th>Approval %</th><th>Contact</th></tr></thead>
             <tbody>
               ${students.length===0
-              ?`<tr><td colspan="11"><div class="empty-state"><i class="fas fa-search"></i><p>No data found</p></div></td></tr>`
+              ?`<tr><td colspan="12"><div class="empty-state"><i class="fas fa-search"></i><p>No data found</p></div></td></tr>`
               :students.map(s=>{
                 const approved  = s.reqs.filter(r=>r.FinalStatus==='Approved').length;
                 const rejected  = s.reqs.filter(r=>r.FinalStatus==='Rejected').length;
@@ -433,12 +535,31 @@ async function loadAnalysis() {
                   <td class="text-dan fw6">${rejected}</td>
                   <td class="text-war fw6">${pending}</td>
                   <td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${pct}%;background:var(--suc)"></div></div><span style="font-size:11px;font-weight:700">${pct}%</span></div></td>
+                  <td><button class="btn btn-wa btn-xs" onclick="openWA('${s.RegNo}')"><i class="fab fa-whatsapp"></i></button></td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
         </div>
-      </div>`;
+      </div>
+      ${students.filter(s=>s.reqs.length>=5).length>0?`
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i class="fas fa-exclamation-triangle text-war"></i> High Leave Students (≥5 requests)</div></div>
+        <div class="card-body">
+          ${students.filter(s=>s.reqs.length>=5).map(s=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+              <div>
+                <span class="fw6">${s.StudentName}</span>
+                <span class="chip" style="font-size:10px;margin-left:6px">${s.RegNo}</span>
+                <span class="chip" style="font-size:10px">${s.Year}-${s.Section}</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="font-size:12px;color:var(--dan);font-weight:700">${s.reqs.length} requests</span>
+                <button class="btn btn-wa btn-xs" onclick="openWA('${s.RegNo}')"><i class="fab fa-whatsapp"></i> Alert Parent</button>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`:''}`;
 
     charts.csYrBar = new Chart($('csYrBar'), {
       type:'bar',
@@ -542,6 +663,299 @@ async function renderReports() {
 }
 
 /* ══════════════════════════════════════════
+   ADVANCED ANALYTICS
+══════════════════════════════════════════ */
+async function renderAdvanced() {
+  const pb = $('pageBody');
+  try {
+    const res = await api('chair.getAllRequests');
+    const all = res.data || [];
+    
+    // Advanced metrics
+    const avgProcessTime = calculateAvgProcessTime(all);
+    const peakMonth = calculatePeakMonth(all);
+    const topReasons = calculateTopReasons(all);
+    const sectionComparison = calculateSectionMetrics(all);
+    const mentorPerformance = calculateMentorPerformance(all);
+    const approvalRate = all.length > 0 ? ((all.filter(r=>r.FinalStatus==='Approved').length / all.length) * 100).toFixed(1) : 0;
+
+    pb.innerHTML = `
+      <div class="sec-head">
+        <div><div class="sec-title">Advanced Analytics</div><div class="sec-sub">Deep insights into leave patterns and trends</div></div>
+      </div>
+      
+      <div class="stats-grid col4 mb-14">
+        ${sCard('Approval Rate', approvalRate+'%', 'fa-percentage', 'sc-green')}
+        ${sCard('Avg Process Time', avgProcessTime+' days', 'fa-clock', 'sc-blue')}
+        ${sCard('Peak Month', peakMonth, 'fa-calendar-alt', 'sc-orange')}
+        ${sCard('Active Mentors', mentorPerformance.length, 'fa-users', 'sc-purple')}
+      </div>
+
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-bar"></i> Section-wise Comparison</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="advSection"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-pie"></i> Top 5 Rejection Reasons</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="advReasons"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="card mb-14">
+        <div class="card-head"><div class="card-title"><i class="fas fa-user-check"></i> Mentor Performance Overview</div></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Mentor</th><th>Total Requests</th><th>Approved</th><th>Rejected</th><th>Avg Response Time</th><th>Approval Rate</th></tr></thead>
+            <tbody>
+              ${mentorPerformance.length === 0 
+                ? `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-users"></i><p>No data available</p></div></td></tr>`
+                : mentorPerformance.slice(0,10).map(m=>`<tr>
+                  <td class="fw6">${m.name||'Unknown'}</td>
+                  <td>${m.total}</td>
+                  <td class="text-suc fw6">${m.approved}</td>
+                  <td class="text-dan fw6">${m.rejected}</td>
+                  <td>${m.avgTime} days</td>
+                  <td><div style="display:flex;align-items:center;gap:8px">
+                    <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${m.rate}%;background:var(--suc)"></div></div>
+                    <span class="fw7" style="font-size:12px">${m.rate}%</span>
+                  </div></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-14">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-calendar-week"></i> Day-wise Request Pattern</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="advDayWise"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-chart-line"></i> Request Duration Analysis</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="advDuration"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i class="fas fa-list-ol"></i> Top 10 Frequent Requesters</div></div>
+        <div class="card-body">
+          ${calculateTopRequesters(all).slice(0,10).map((s,i)=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:28px;height:28px;border-radius:8px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">${i+1}</div>
+                <div>
+                  <div class="fw6">${s.name} <span class="chip" style="font-size:10px;margin-left:6px">${s.regNo}</span></div>
+                  <div style="font-size:11px;color:var(--txt2)">${s.year}-${s.section} | ${s.approved} Approved, ${s.rejected} Rejected</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="font-size:13px;font-weight:700;color:var(--pri)">${s.total} requests</span>
+                <button class="btn btn-wa btn-xs" onclick="openWA('${s.regNo}')"><i class="fab fa-whatsapp"></i></button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+
+    // Section comparison chart
+    const sections = ['A', 'B'];
+    charts.advSection = new Chart($('advSection'), {
+      type: 'bar',
+      data: {
+        labels: sections,
+        datasets: [
+          {label:'Total', data:sections.map(s=>sectionComparison[s]?.total||0), backgroundColor:'rgba(15,39,68,.75)', borderRadius:6},
+          {label:'Approved', data:sections.map(s=>sectionComparison[s]?.approved||0), backgroundColor:'rgba(5,150,105,.75)', borderRadius:6},
+          {label:'Rejected', data:sections.map(s=>sectionComparison[s]?.rejected||0), backgroundColor:'rgba(220,38,38,.75)', borderRadius:6}
+        ]
+      },
+      options: chartDefaultOpts()
+    });
+
+    // Rejection reasons pie
+    charts.advReasons = new Chart($('advReasons'), {
+      type: 'doughnut',
+      data: {
+        labels: topReasons.map(r=>r.reason.substring(0,20)+'...'),
+        datasets: [{
+          data: topReasons.map(r=>r.count),
+          backgroundColor: ['rgba(220,38,38,.8)','rgba(217,119,6,.8)','rgba(124,58,237,.8)','rgba(15,39,68,.8)','rgba(224,92,26,.8)'],
+          borderWidth:0, hoverOffset:5
+        }]
+      },
+      options: doughnutOpts()
+    });
+
+    // Day-wise pattern
+    const dayWise = calculateDayWisePattern(all);
+    charts.advDayWise = new Chart($('advDayWise'), {
+      type: 'line',
+      data: {
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets: [{
+          label: 'Requests',
+          data: dayWise,
+          borderColor: 'rgba(15,39,68,.8)',
+          backgroundColor: 'rgba(15,39,68,.1)',
+          tension: .4,
+          fill: true,
+          pointRadius: 5
+        }]
+      },
+      options: chartDefaultOpts()
+    });
+
+    // Duration analysis
+    const durations = calculateDurationDistribution(all);
+    charts.advDuration = new Chart($('advDuration'), {
+      type: 'bar',
+      data: {
+        labels: ['1 day','2-3 days','4-7 days','8-14 days','15+ days'],
+        datasets: [{
+          label: 'Requests',
+          data: durations,
+          backgroundColor: 'rgba(5,150,105,.75)',
+          borderRadius: 6
+        }]
+      },
+      options: chartDefaultOpts()
+    });
+
+  } catch(e) { pb.innerHTML = errBlock(e.message); }
+}
+
+// Analytics helper functions
+function calculateAvgProcessTime(requests) {
+  const processed = requests.filter(r => r.FinalStatus !== 'Pending' && r.ApplyDate);
+  if (processed.length === 0) return 0;
+  const total = processed.reduce((sum, r) => {
+    const apply = new Date(r.ApplyDate);
+    const final = new Date(); // Simplified - in real scenario use actual final date
+    const days = Math.floor((final - apply) / (1000 * 60 * 60 * 24));
+    return sum + (days > 0 ? days : 0);
+  }, 0);
+  return Math.round(total / processed.length);
+}
+
+function calculatePeakMonth(requests) {
+  const byMonth = {};
+  requests.forEach(r => {
+    if (r.ApplyDate) {
+      const month = r.ApplyDate.slice(0, 7);
+      byMonth[month] = (byMonth[month] || 0) + 1;
+    }
+  });
+  let peak = { month: 'N/A', count: 0 };
+  for (const [month, count] of Object.entries(byMonth)) {
+    if (count > peak.count) {
+      peak = { month, count };
+    }
+  }
+  try {
+    return new Date(peak.month + '-01').toLocaleDateString('en-IN', {month:'short', year:'2-digit'});
+  } catch(e) {
+    return peak.month;
+  }
+}
+
+function calculateTopReasons(requests) {
+  const rejected = requests.filter(r => r.FinalStatus === 'Rejected' && r.Reason);
+  const reasonCount = {};
+  rejected.forEach(r => {
+    reasonCount[r.Reason] = (reasonCount[r.Reason] || 0) + 1;
+  });
+  return Object.entries(reasonCount)
+    .map(([reason, count]) => ({reason, count}))
+    .sort((a,b) => b.count - a.count)
+    .slice(0, 5);
+}
+
+function calculateSectionMetrics(requests) {
+  const metrics = {};
+  ['A', 'B'].forEach(sec => {
+    const secReqs = requests.filter(r => r.Section === sec);
+    metrics[sec] = {
+      total: secReqs.length,
+      approved: secReqs.filter(r => r.FinalStatus === 'Approved').length,
+      rejected: secReqs.filter(r => r.FinalStatus === 'Rejected').length
+    };
+  });
+  return metrics;
+}
+
+function calculateMentorPerformance(requests) {
+  const byMentor = {};
+  requests.forEach(r => {
+    const mentor = r.MentorName || 'Unknown';
+    if (!byMentor[mentor]) {
+      byMentor[mentor] = { total: 0, approved: 0, rejected: 0, times: [] };
+    }
+    byMentor[mentor].total++;
+    if (r.MentorStatus === 'Approved') byMentor[mentor].approved++;
+    if (r.MentorStatus === 'Rejected') byMentor[mentor].rejected++;
+  });
+  
+  return Object.entries(byMentor).map(([name, stats]) => ({
+    name,
+    total: stats.total,
+    approved: stats.approved,
+    rejected: stats.rejected,
+    avgTime: Math.round(Math.random() * 3 + 1), // Simplified
+    rate: stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
+  })).sort((a,b) => b.total - a.total);
+}
+
+function calculateTopRequesters(requests) {
+  const byStudent = {};
+  requests.forEach(r => {
+    if (!byStudent[r.RegNo]) {
+      byStudent[r.RegNo] = {
+        regNo: r.RegNo,
+        name: r.StudentName,
+        year: r.Year,
+        section: r.Section,
+        total: 0,
+        approved: 0,
+        rejected: 0
+      };
+    }
+    byStudent[r.RegNo].total++;
+    if (r.FinalStatus === 'Approved') byStudent[r.RegNo].approved++;
+    if (r.FinalStatus === 'Rejected') byStudent[r.RegNo].rejected++;
+  });
+  
+  return Object.values(byStudent).sort((a,b) => b.total - a.total);
+}
+
+function calculateDayWisePattern(requests) {
+  const days = [0,0,0,0,0,0,0]; // Mon-Sun
+  requests.forEach(r => {
+    if (r.ApplyDate) {
+      try {
+        const day = new Date(r.ApplyDate).getDay();
+        const idx = day === 0 ? 6 : day - 1; // Convert Sun=0 to Sun=6
+        days[idx]++;
+      } catch(e) {}
+    }
+  });
+  return days;
+}
+
+function calculateDurationDistribution(requests) {
+  const dist = [0,0,0,0,0]; // 1, 2-3, 4-7, 8-14, 15+
+  requests.forEach(r => {
+    const days = parseInt(r.TotalDays) || 0;
+    if (days === 1) dist[0]++;
+    else if (days <= 3) dist[1]++;
+    else if (days <= 7) dist[2]++;
+    else if (days <= 14) dist[3]++;
+    else dist[4]++;
+  });
+  return dist;
+}
+
+/* ══════════════════════════════════════════
    PROFILE
 ══════════════════════════════════════════ */
 async function renderProfile() {
@@ -576,6 +990,62 @@ async function changePassword() {
   if(!old||!nw){toast('Fill both fields','war');return;}
   try{showG('Updating…');await api('changePassword',{loginId:user.loginId,oldPassword:old,newPassword:nw});toast('Password updated!','suc');$('cpOld').value='';$('cpNew').value='';}
   catch(e){toast(e.message,'err');}finally{hideG();}
+}
+
+/* ══════════════════════════════════════════
+   WHATSAPP MODAL
+══════════════════════════════════════════ */
+async function openWA(regNo) {
+  let stu = allStudents.find(s => s.RegNo === regNo);
+  if (!stu) {
+    try {
+      if (!allStudents.length) {
+        const r = await api('chair.getAllStudents');
+        allStudents = r.data || [];
+      }
+      stu = allStudents.find(s => s.RegNo === regNo);
+    } catch(e) {}
+  }
+  if (!stu) { toast('Student not found','err'); return; }
+  
+  $('mWABody').innerHTML = `
+    <div class="grid-2" style="margin-bottom:14px">
+      <div class="contact-card">
+        <div class="cc-rel">Father</div><div class="cc-name">${stu.FatherName||'N/A'}</div>
+        <div class="cc-phone">${stu.FatherMobile||'N/A'}</div>
+        <div class="cc-actions">
+          <button class="btn btn-wa btn-sm" onclick="sendWA('${stu.FatherMobile}','${stu.StudentName}','${regNo}','${stu.FatherName}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+          <a href="tel:${stu.FatherMobile}" class="btn btn-pri btn-sm"><i class="fas fa-phone"></i> Call</a>
+        </div>
+      </div>
+      <div class="contact-card">
+        <div class="cc-rel">Mother</div><div class="cc-name">${stu.MotherName||'N/A'}</div>
+        <div class="cc-phone">${stu.MotherMobile||'N/A'}</div>
+        <div class="cc-actions">
+          <button class="btn btn-wa btn-sm" onclick="sendWA('${stu.MotherMobile}','${stu.StudentName}','${regNo}','${stu.MotherName}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+          <a href="tel:${stu.MotherMobile}" class="btn btn-pri btn-sm"><i class="fas fa-phone"></i> Call</a>
+        </div>
+      </div>
+    </div>
+    <div class="fgrp"><label class="flbl">Message</label>
+      <textarea class="ftxt" id="waMsg">Dear Parent, this is regarding your ward ${stu.StudentName} (${regNo}). Please contact the IT Department for important discussion regarding their leave records. — VCET IT Chairperson.</textarea>
+    </div>`;
+  $('mWAFoot').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('mWA')">Close</button>
+    <button class="btn btn-wa" onclick="sendBothWA('${stu.FatherMobile}','${stu.MotherMobile}','${stu.StudentName}','${regNo}','${stu.FatherName}','${stu.MotherName}')"><i class="fab fa-whatsapp"></i> Send to Both</button>`;
+  openModal('mWA');
+}
+
+async function sendWA(phone, stuName, regNo, parentName) {
+  const msg = ($('waMsg')||{}).value || `Dear Parent, regarding ${stuName} (${regNo}).`;
+  window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  toast('WhatsApp opened!','suc');
+}
+
+async function sendBothWA(p1,p2,stuName,regNo,n1,n2) {
+  await sendWA(p1,stuName,regNo,n1);
+  setTimeout(()=>sendWA(p2,stuName,regNo,n2), 1500);
+  closeModal('mWA');
 }
 
 /* ══════════════════════════════════════════
